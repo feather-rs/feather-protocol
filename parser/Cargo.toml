@@ -1,0 +1,11 @@
+[package]
+name = "feather-packet-parser"
+version = "0.1.0"
+authors = ["Caelum van Ispelen <caelum12321@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+async-std = "1.5"
+log = "0.4"
+anyhow = "1.0"
+thiserror = "1.0"
