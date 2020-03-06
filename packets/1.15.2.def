@@ -1,0 +1,459 @@
+clientbound {
+    SpawnObject {
+        varint entity;
+        uuid uuid;
+        varint type;
+        double x;
+        double y;
+        double z;
+        angle pitch;
+        angle yaw;
+        int data;
+        short dx;
+        short dy;
+        short dz;
+    }
+    
+    SpawnExperienceOrb {
+        varint entity;
+        double x;
+        double y;
+        double z;
+        short count;
+    }
+    
+    SpawnGlobalEntity {
+        varint entity;
+        ubyte(enum { Thunderbolt = 1 }) type;
+    }
+    
+    SpawnMob {
+        varint entity;
+        uuid uuid;
+        varint ty;
+        double x;
+        double y;
+        double z;
+        angle yaw;
+        angle pitch;
+        angle head_pitch;
+        short dx;
+        short dy;
+        short dz;
+    }
+    
+    SpawnPainting {
+        varint entity;
+        uuid uuid;
+        varint motive;
+        position position;
+        ubyte(enum { North = 2, South = 0, West = 1, East = 3 }) direction;
+    }
+    
+    SpawnPlayer {
+        varint entity;
+        uuid uuid;
+        double x;
+        double y;
+        double z;
+        angle yaw;
+        angle pitch;
+    }
+    
+    EntityAnimation {
+        varint entity;
+        ubyte(enum { SwingMainArm = 0, TakeDamage = 1, LeaveBed = 2, SwingOffhand = 3, CriticalEffect = 4, MagicCriticalEffect = 5 }) animation;
+    }
+    
+    Statistics {
+        varint count(statistics.length);
+        struct { varint category_id, varint statistic_id } statistics[];
+        varint value;
+    }
+    
+    AcknowledgePlayerDigging {
+        position position;
+        varint(block.id) block;
+        varint(enum { StartedDigging = 0, CancelledDigging = 1, FinishedDigging = 2 }) status;
+        boolean successful;
+    }
+    
+    BlockBreakAnimation {
+        varint breaker;
+        position position;
+        ubyte destroy_stage;
+    }
+    
+    UpdateBlockEntity {
+        position os;
+        ubyte(enum {
+            SetMobSpawnerData = 1,
+            SetCommandBlockText = 2,
+            UpdateBeacon = 3,
+            SetMobHead = 4,
+            Conduit = 5,
+            UpdateBanner = 6,
+            SetStructureData = 7,
+            SetGatewayDestination = 8,
+            SetSignText = 9,
+            DeclareBed = 11,
+            SetJigsawBlockData = 12,
+            SetCampfireItems = 13,
+            SetBeehiveData = 14,
+        }) action;
+        nbt data;
+    }
+    
+    BlockAction {
+        position position;
+        ubyte action_id;
+        ubyte action_param;
+        varint(block.type) block_type;
+    }
+    
+    BlockChange {
+        position position;
+        varint(block.id) block;
+    }
+    
+    BossBar {
+        uuid uuid;
+        varint(data) action;
+        enum {
+            Add {
+                chat title;
+                float health;
+                varint(BossBarColor) color;
+                varint(BossBarDivision) division;
+                ubyte(BossBarFlags) flags;
+            } = 0,
+            Remove = 1,
+            UpdateHealth { float health; } = 2,
+            UpdateTitle { chat title; } = 3,
+            UpdateStyle { varint(BossBarColor) color; varint(BossBarDivision) division; } = 4,
+            UpdateFlags { ubyte(BossBarFlags) flags; } = 5,
+        } data;
+    }
+    
+    bitflag BossBarFlags {
+        DarkenSky = 0x1;
+        DragonBar = 0x2;
+        Fog = 0x4;
+    }
+    
+    enum BossBarColor {
+        Pink = 0,
+        Blue = 1,
+        Red = 2,
+        Green = 3,
+        Yellow = 4,
+        Purple = 5,
+        White = 6,
+    }
+    
+    enum BossBarDivision {
+        None = 0,
+        Six = 1,
+        Ten = 2,
+        Twelve = 3,
+        Twenty = 4,
+    }
+    
+    ServerDifficulty {
+        ubyte(difficulty.id) difficulty;
+        boolean difficulty_locked;
+    }
+    
+    ChatMessage {
+        chat data;
+        ubyte(enum { Chat = 0, SystemMessage = 1, GameInfo = 2 }) position;
+    }
+    
+    MultiBlockChange {
+        int chunk_x;
+        int chunk_z;
+        varint count(records.length);
+        struct {
+            ubyte horizontal_position;
+            ubyte vertical_position;
+            varint(block.id) block;
+        } records[];
+    }
+
+    TabComplete {
+        varint transaction_id;
+        varint start;
+        varint length;
+        varint count(matches.length);
+        struct {
+            string match;
+            boolean is_chat => chat tooltip;
+        } matches[];
+    }
+
+    DeclareCommands {
+        varint count(nodes.length);
+        node nodes[];
+        varint root_index;
+    }
+
+    WindowConfirmation {
+        ubyte window_id;
+        short action_number;
+        boolean accepted;
+    }
+
+    CloseWindow {
+        ubyte window_id;
+    }
+
+    WindowItems {
+        ubyte window_id;
+        short count(slots.length);
+        slot slots[];
+    }
+
+    WindowProperty {
+        ubyte window_id;
+        short property;
+        short value;
+    }
+
+    SetSlot {
+        ubyte window_id;
+        short slot_index;
+        slot slot;
+    }
+
+    SetCooldown {
+        varint(item.id) item;
+        varint cooldown_ticks;
+    }
+
+    PluginMessage {
+        identifier channel;
+        byte data[];
+    }
+
+    NamedSoundEffect {
+        identifier name;
+        varint category;
+        int posx;
+        int posy;
+        int posz;
+        float volume;
+        float pitch;
+    }
+
+    Disconnect {
+        chat reason;
+    }
+
+    EntityStatus {
+        int entity;
+        byte status;
+    }
+
+    Explosion {
+        float x;
+        float y;
+        float z;
+        float strength;
+
+        int record_count(records.length);
+        struct {
+            byte x;
+            byte y;
+            byte z;
+        } records[];
+
+        float player_dx;
+        float player_dy;
+        float player_dz;
+    }
+
+    UnloadChunk {
+        int x;
+        int z;
+    }
+
+    ChangeGameState {
+        ubyte(enum {
+            InvalidBed = 0,
+            EndRaining = 1,
+            BeginRaining = 2,
+            ChangeGamemode = 3,
+            ExitEnd = 4,
+            DemoMessage = 5,
+            ArrowHittingPlayer = 6,
+            FadeValue = 7,
+            FadeTime = 8,
+            PufferfishSting = 9,
+            ElderGuardianAppearance = 10,
+            EnableRespawnScreen = 11,
+        }) reason;
+        float value;
+    }
+
+    OpenHorseWindow {
+        ubyte window_id;
+        varint num_slots;
+        int entity;
+    }
+
+    KeepAlive {
+        long id;
+    }
+
+    @manual("chunk_data.1.15.2.rs")
+    ChunkData {}
+
+    Effect {
+        int id;
+        position position;
+        int data;
+        boolean disable_relative_volume;
+    }
+
+    @skip(Particle)
+
+    @manual("update_light.1.15.2.rs")
+    UpdateLight {}
+
+    JoinGame {
+        varint player_eid;
+        ubyte(gamemode.id) gamemode;
+        int(dimension.id) dimension;
+        long hashed_seed;
+        ubyte max_players;
+        string(enum {
+            Default = "default",
+            Flat = "flat",
+            LargeBiomes = "largeBiomes",
+            Amplified = "amplified",
+            Customized = "customized",
+            Buffet = "buffet",
+            Default11 = "default_1_1",
+        }) level_type;
+
+        varint view_distance;
+        boolean reduced_debug_info;
+        boolean enable_respawn_screen;
+    }
+
+    @skip(MapData)
+    @skip(TradeList)
+
+    EntityPosition {
+        varint entity;
+        short dx;
+        short dy;
+        short dz;
+        boolean on_ground;
+    }
+
+    EntityPositionAndRotation {
+        varint entity;
+        short dx;
+        short dy;
+        short dz;
+        angle yaw;
+        angle pitch;
+        boolean on_ground;
+    }
+
+    EntityRotation {
+        varint entity;
+        angle yaw;
+        angle pitch;
+        boolean on_ground;
+    }
+
+    EntityMovement {
+        varint entity;
+    }
+
+    VehicleMove {
+        double x;
+        double y;
+        double z;
+        float yaw;
+        float pitch;
+    }
+
+    OpenBook {
+        varint(hand.id) hand;
+    }
+
+    OpenWindow {
+        varint window_id;
+        varint type;
+        chat title;
+    }
+
+    OpenSignEditor {
+        posiion position;
+    }
+
+    CraftRecipeResponse {
+        ubyte window_id;
+        identifier recipe;
+    }
+
+    PlayerAbilities {
+        byte(bitflag {
+            Invulnerable = 0x01;
+            Flying = 0x02;
+            AllowFlying = 0x04;
+            CreativeMode = 0x08;
+        }) flags;
+        float flying_speed;
+        float fov_modifier;
+    }
+
+    CombatEvent {
+        varint(event) event_id;
+        enum {
+            EnterCombat {
+
+            } = 0,
+            EndCombat {
+                varint duration;
+                int entity;
+            } = 1,
+            EntityDead {
+                varint player;
+                int entity;
+                chat message;
+            } = 2,
+        } event;
+    }
+
+    @manual("player_info.1.15.2.rs")
+    PlayerInfo {}
+    /*PlayerInfo {
+        varint(action) action_id;
+        varint num_players(players.length);
+        struct {
+            uuid uuid;
+            enum {
+                AddPlayer {
+                    string name;
+                    varint num_props(properties.length);
+                    struct {
+                        string name;
+                        string value;
+                        boolean signed => string signature;
+                    } properties[];
+                    varint(gamemode.id) gamemode;
+                    varint ping;
+                    boolean has_display_name => chat display_name;
+                } = 1,
+                UpdateGamemode { varint(gamemode.id) gamemode; } = 1,
+                UpdateLatency { varint ping; } = 2,
+                UpdateDisplayName { boolean has_display_name => chat display_name; } = 3,
+                RemovePlayer = 4,
+            } action;
+        } players[];
+    }*/
+}
