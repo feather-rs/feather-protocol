@@ -456,7 +456,13 @@ fn compile_packet_field(
         loop {
             let next = constructs.next().ok_or(Error::UnexpectedEof)?;
 
-            if let Some(identifier) = next.as_identifier() {
+            if let Some(paren) = next.as_parenthesized() {
+                let identifier = paren
+                    .constructs
+                    .first()
+                    .ok_or(Error::UnexpectedEof)?
+                    .as_identifier()
+                    .ok_or(Error::ExpectedIdentifier)?;
                 value_from = Some(ValueFrom::from_str(&identifier).ok_or(Error::InvalidValueFrom)?);
             } else if let Some(tok) = next.as_token() {
                 if tok == &Token::Array {

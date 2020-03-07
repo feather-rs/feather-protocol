@@ -332,7 +332,11 @@ PacketDefinitions {
                     name: "count",
                     ty: Varint,
                     ty_from: None,
-                    value_from: None,
+                    value_from: Some(
+                        ArrayLength {
+                            field: "statistics",
+                        },
+                    ),
                 },
                 PacketField {
                     name: "statistics",
@@ -586,7 +590,11 @@ PacketDefinitions {
                     name: "count",
                     ty: Varint,
                     ty_from: None,
-                    value_from: None,
+                    value_from: Some(
+                        ArrayLength {
+                            field: "records",
+                        },
+                    ),
                 },
                 PacketField {
                     name: "records",
@@ -626,7 +634,11 @@ PacketDefinitions {
                     name: "count",
                     ty: Varint,
                     ty_from: None,
-                    value_from: None,
+                    value_from: Some(
+                        ArrayLength {
+                            field: "matches",
+                        },
+                    ),
                 },
                 PacketField {
                     name: "matches",
@@ -648,7 +660,11 @@ PacketDefinitions {
                     name: "count",
                     ty: Varint,
                     ty_from: None,
-                    value_from: None,
+                    value_from: Some(
+                        ArrayLength {
+                            field: "nodes",
+                        },
+                    ),
                 },
                 PacketField {
                     name: "nodes",
@@ -718,7 +734,11 @@ PacketDefinitions {
                     name: "count",
                     ty: Short,
                     ty_from: None,
-                    value_from: None,
+                    value_from: Some(
+                        ArrayLength {
+                            field: "slots",
+                        },
+                    ),
                 },
                 PacketField {
                     name: "slots[]",
@@ -928,7 +948,11 @@ PacketDefinitions {
                     name: "record_count",
                     ty: Int,
                     ty_from: None,
-                    value_from: None,
+                    value_from: Some(
+                        ArrayLength {
+                            field: "records",
+                        },
+                    ),
                 },
                 PacketField {
                     name: "records[]",
