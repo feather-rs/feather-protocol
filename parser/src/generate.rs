@@ -26,8 +26,8 @@ fn generate_structs_and_enums(defs: &PacketDefinitions) -> anyhow::Result<TokenS
 
     Ok(quote! {
         use bytes::{Bytes, BytesMut, Buf, BufMut};
-        use crate::{BytesExt, BytesMutExt, Provider};
-        const VERSION: crate::ProtocolVersion = ProtocolVersion::V1_15_2;
+        use crate::{BytesExt, BytesMutExt, Provider, Error, ProtocolVersion};
+        const VERSION: dProtocolVersion = ProtocolVersion::V1_15_2;
         #(#tokens)*
     })
 }
@@ -62,7 +62,7 @@ fn generate_struct(s: &Struct) -> TokenStream {
         }
 
         impl <P> #name<P> where P: Provider {
-            pub fn read_from(buf: &mut bytes::Bytes) -> anyhow::Result<Self> {
+            pub fn read_from(buf: &mut Bytes) -> anyhow::Result<Self> {
                 let version = VERSION;
                 #(#read_from)*
 
@@ -83,17 +83,29 @@ fn generate_struct(s: &Struct) -> TokenStream {
 fn generate_enum(e: &Enum) -> TokenStream {
     dbg!(e);
     let name = ident(&e.name);
+    let name_str = &e.name;
 
     let mut defs = vec![];
+    let mut read_froms = vec![];
 
     for variant in &e.variants {
         let (def, read_from, write_to, repr, from_repr) = generate_enum_variant(e, variant);
         defs.push(def);
+        read_froms.push(read_from);
     }
 
     let res = quote! {
         pub enum #name<P: Provider> {
             #(#defs ,)*
+        }
+
+        impl <P> #name<P> where P: Provider {
+            pub fn read_from(buf: &mut Bytes, repr: EnumRepr) -> anyhow::Result<Self> {
+                match repr {
+                    #(#read_froms ,)*
+                    repr => Err(Error::InvalidEnumRepr(repr, #name_str)),
+                }
+            }
         }
     };
     res
@@ -157,9 +169,9 @@ fn generate_enum_variant_read_from(e: &Enum, variant: &EnumVariant) -> TokenStre
     quote! {
         #repr => {
             #(#read_from ;)*
-            #enum_name::#name {
+            Ok(#enum_name::#name {
                 #(#finish, )*
-            }
+            })
         }
     }
 }
@@ -308,7 +320,7 @@ fn tokenize_field_type(ty: &FieldType) -> TokenStream {
         }
         FieldType::StructOrEnum { name } => {
             let ident = ident(name);
-            quote! { #ident }
+            quote! { #ident::<P> }
         }
     }
 }
