@@ -1,3 +1,4 @@
+use proc_macro2::TokenStream;
 use std::collections::HashSet;
 use std::str::{Chars, FromStr};
 use strum::*;
@@ -68,6 +69,23 @@ impl Construct {
 pub enum Literal {
     Integer(i64),
     String(String),
+}
+
+impl Literal {
+    pub fn as_enum_repr(&self) -> TokenStream {
+        use quote::quote;
+
+        match self {
+            Literal::Integer(x) => {
+                let x = *x;
+                quote! { EnumRepr::Integer(#x) }
+            }
+            Literal::String(x) => {
+                let x = x.as_str();
+                quote! { EnumRepr::String(#x) }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

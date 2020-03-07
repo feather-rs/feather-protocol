@@ -1,4 +1,6 @@
-use crate::compile::{FieldFrom, FieldType, PacketDefinitions, Struct, StructField, StructOrEnum};
+use crate::compile::{
+    Enum, EnumVariant, FieldFrom, FieldType, PacketDefinitions, Struct, StructField, StructOrEnum,
+};
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::quote;
 
@@ -18,7 +20,7 @@ fn generate_structs_and_enums(defs: &PacketDefinitions) -> anyhow::Result<TokenS
     for se in &defs.structs_and_enums {
         match se {
             StructOrEnum::Struct(s) => tokens.push(generate_struct(s)),
-            x => println!("skipped TODO {:?}", x),
+            StructOrEnum::Enum(e) => tokens.push(generate_enum(e)),
         }
     }
 
@@ -47,7 +49,9 @@ fn generate_struct(s: &Struct) -> TokenStream {
         });
 
         read_from.push(read_from_statement(field));
-        write_to.push(write_to_statement(field));
+        let write = write_to_statement(field);
+
+        write_to.push(quote! { let #fname = self.#fname; #write });
 
         field_initializers.push(quote! { #fname, })
     }
@@ -74,6 +78,102 @@ fn generate_struct(s: &Struct) -> TokenStream {
         }
     };
     res
+}
+
+fn generate_enum(e: &Enum) -> TokenStream {
+    dbg!(e);
+    let name = ident(&e.name);
+
+    let mut defs = vec![];
+
+    for variant in &e.variants {
+        let (def, read_from, write_to, repr, from_repr) = generate_enum_variant(e, variant);
+        defs.push(def);
+    }
+
+    let res = quote! {
+        pub enum #name<P: Provider> {
+            #(#defs ,)*
+        }
+    };
+    res
+}
+
+fn generate_enum_variant(
+    e: &Enum,
+    variant: &EnumVariant,
+) -> (
+    TokenStream,
+    TokenStream,
+    TokenStream,
+    TokenStream,
+    TokenStream,
+) {
+    (
+        generate_enum_variant_def(e, variant),
+        generate_enum_variant_read_from(e, variant),
+        generate_enum_variant_write_to(e, variant),
+        generate_enum_variant_repr(e, variant),
+        generate_enum_variant_from_repr(e, variant),
+    )
+}
+
+fn generate_enum_variant_def(e: &Enum, variant: &EnumVariant) -> TokenStream {
+    let name = ident(&variant.name);
+
+    let mut fields = vec![];
+    for field in &variant.fields {
+        let fname = ident(&field.name);
+        let ty = tokenize_field_type(&actual_field_type(field));
+
+        fields.push(quote! {
+            #fname: #ty
+        });
+    }
+
+    quote! {
+        #name {
+            #(#fields, )*
+        }
+    }
+}
+
+fn generate_enum_variant_read_from(e: &Enum, variant: &EnumVariant) -> TokenStream {
+    let name = ident(&variant.name);
+    let enum_name = ident(&e.name);
+
+    let mut read_from = vec![];
+    let mut finish = vec![];
+
+    for field in &variant.fields {
+        read_from.push(read_from_statement(field));
+
+        let fname = ident(&field.name);
+        finish.push(quote! { #fname });
+    }
+
+    let repr = variant.repr.as_enum_repr();
+
+    quote! {
+        #repr => {
+            #(#read_from ;)*
+            #enum_name::#name {
+                #(#finish, )*
+            }
+        }
+    }
+}
+
+fn generate_enum_variant_write_to(e: &Enum, variant: &EnumVariant) -> TokenStream {
+    quote! {}
+}
+
+fn generate_enum_variant_repr(e: &Enum, variant: &EnumVariant) -> TokenStream {
+    quote! {}
+}
+
+fn generate_enum_variant_from_repr(e: &Enum, variant: &EnumVariant) -> TokenStream {
+    quote! {}
 }
 
 fn read_from_statement(field: &StructField) -> TokenStream {
@@ -142,7 +242,7 @@ fn write_to_statement(field: &StructField) -> TokenStream {
         None
     };
 
-    quote! { let #field_name = self.#field_name ; #convert ; #f ; }
+    quote! { #convert ; #f ; }
 }
 
 fn write_fn_ident(field_name: &str, ty: &FieldType) -> TokenStream {

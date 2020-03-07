@@ -2,6 +2,23 @@
 use crate::{BytesExt, BytesMutExt, Provider};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 const VERSION: crate::ProtocolVersion = ProtocolVersion::V1_15_2;
+pub enum SpawnGlobalEntityType<P: Provider> {
+    Thunderbolt {},
+}
+pub enum SpawnPaintingDirection<P: Provider> {
+    North {},
+    South {},
+    West {},
+    East {},
+}
+pub enum EntityAnimationType<P: Provider> {
+    SwingMainArm {},
+    TakeDamage {},
+    LeaveBed {},
+    SwingOffhand {},
+    CriticalEffect {},
+    MagicCriticalEffect {},
+}
 pub struct Statistic<P: Provider> {
     category_id: i32,
     statistic_id: i32,
@@ -26,6 +43,70 @@ where
         let statistic_id = self.statistic_id;
         buf.put_i32(statistic_id);
     }
+}
+pub enum AcknowledgePlayerDiggingStatus<P: Provider> {
+    StartedDigging {},
+    CancelledDigging {},
+    FinishedDigging {},
+}
+pub enum UpdateBlockEntityAction<P: Provider> {
+    SetMobSpawnerData {},
+    SetCommandBlockText {},
+    UpdateBeacon {},
+    SetMobHead {},
+    Conduit {},
+    UpdateBanner {},
+    SetStructureData {},
+    SetGatewayDestination {},
+    SetSignText {},
+    DeclareBed {},
+    SetJigsawBlockData {},
+    SetCampfireItems {},
+    SetBeehiveData {},
+}
+pub enum BossBarData<P: Provider> {
+    Add {
+        title: String,
+        health: f32,
+        color: BossBarColor,
+        division: BossBarDivision,
+        flags: BossBarFlags,
+    },
+    Remove {},
+    UpdateHealth {
+        health: f32,
+    },
+    UpdateTitle {
+        title: String,
+    },
+    UpdateStyle {
+        color: BossBarColor,
+        division: BossBarDivision,
+    },
+    UpdateFlags {
+        flags: BossBarFlags,
+    },
+}
+pub enum BossBarColor<P: Provider> {
+    Pink {},
+    Blue {},
+    Red {},
+    Green {},
+    Yellow {},
+    Purple {},
+    White {},
+}
+pub enum BossBarDivision<P: Provider> {
+    None {},
+    Six {},
+    Ten {},
+    Twelve {},
+    Twenty {},
+}
+pub enum ChatMessagePosition<P: Provider> {
+    Chat {},
+    SystemMessage {},
+    GameInfo {},
 }
 pub struct MultiBlockChangeRecord<P: Provider> {
     horizontal_position: u8,
@@ -116,4 +197,39 @@ where
         let z = self.z;
         buf.put_i8(z);
     }
+}
+pub enum ChangeGameStateReason<P: Provider> {
+    InvalidBed {},
+    EndRaining {},
+    BeginRaining {},
+    ChangeGamemode {},
+    ExitEnd {},
+    DemoMessage {},
+    ArrowHittingPlayer {},
+    FadeValue {},
+    FadeTime {},
+    PufferfishSting {},
+    ElderGuardianAppearance {},
+    EnableRespawnScreen {},
+}
+pub enum JoinGameLevelType<P: Provider> {
+    Default {},
+    Flat {},
+    LargeBiomes {},
+    Amplified {},
+    Customized {},
+    Buffet {},
+    Default11 {},
+}
+pub enum CombatEventType<P: Provider> {
+    EnterCombat {},
+    EndCombat {
+        duration: i32,
+        entity: i32,
+    },
+    EntityDead {
+        player: i32,
+        entity: i32,
+        message: String,
+    },
 }
