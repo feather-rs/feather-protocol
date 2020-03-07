@@ -8,5 +8,9 @@ edition = "2018"
 bytes = "0.4"
 smallbox = "0.8"
 
+[build-dependencies]
+feather-packet-parser = { path = "parser" }
+async-std = { version = "1.1", features = ["attributes"] }
+
 [workspace]
 members = [".", "parser"]

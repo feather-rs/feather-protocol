@@ -67,7 +67,7 @@ clientbound {
     
     Statistics {
         varint count(statistics.length);
-        struct { varint category_id, varint statistic_id } statistics[];
+        struct { varint category_id, varint statistic_id } statistics [];
         varint value;
     }
     
@@ -177,23 +177,23 @@ clientbound {
             ubyte horizontal_position;
             ubyte vertical_position;
             varint(block.id) block;
-        } records[];
+        } records [];
     }
 
     TabComplete {
         varint transaction_id;
         varint start;
         varint length;
-        varint count(matches.length);
+        varint count (matches.length);
         struct {
             string match;
             boolean is_chat => chat tooltip;
-        } matches[];
+        } matches [];
     }
 
     DeclareCommands {
-        varint count(nodes.length);
-        node nodes[];
+        varint count (nodes.length);
+        node nodes [];
         varint root_index;
     }
 
@@ -429,7 +429,7 @@ clientbound {
         } event;
     }
 
-    @manual("player_info.1.15.2.rs")
+    @manual ("player_info.1.15.2.rs")
     PlayerInfo {}
     /*PlayerInfo {
         varint(action) action_id;
