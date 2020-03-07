@@ -135,12 +135,6 @@ clientbound {
         } data;
     }
     
-    bitflag BossBarFlags {
-        DarkenSky = 0x1;
-        DragonBar = 0x2;
-        Fog = 0x4;
-    }
-    
     enum BossBarColor {
         Pink = 0,
         Blue = 1,
@@ -401,12 +395,7 @@ clientbound {
     }
 
     PlayerAbilities {
-        byte(bitflag {
-            Invulnerable = 0x01;
-            Flying = 0x02;
-            AllowFlying = 0x04;
-            CreativeMode = 0x08;
-        }) flags;
+        byte flags;
         float flying_speed;
         float fov_modifier;
     }
@@ -431,31 +420,6 @@ clientbound {
 
     @manual ("player_info.1.15.2.rs")
     PlayerInfo {}
-    /*PlayerInfo {
-        varint(action) action_id;
-        varint num_players(players.length);
-        struct {
-            uuid uuid;
-            enum {
-                AddPlayer {
-                    string name;
-                    varint num_props(properties.length);
-                    struct {
-                        string name;
-                        string value;
-                        boolean signed => string signature;
-                    } properties[];
-                    varint(gamemode.id) gamemode;
-                    varint ping;
-                    boolean has_display_name => chat display_name;
-                } = 1,
-                UpdateGamemode { varint(gamemode.id) gamemode; } = 1,
-                UpdateLatency { varint ping; } = 2,
-                UpdateDisplayName { boolean has_display_name => chat display_name; } = 3,
-                RemovePlayer = 4,
-            } action;
-        } players[];
-    }*/
 }
 
 serverbound {

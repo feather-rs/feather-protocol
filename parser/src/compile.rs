@@ -1,30 +1,95 @@
-pub struct CompiledTree {
-    clientbound: Vec<Def>,
-    serverbound: Vec<Def>,
+use crate::parse::{Construct, Keyword, Literal, SyntaxTree, Token};
+use strum::*;
+use strum_macros::*;
+use thiserror::Error;
+
+#[derive(Debug, Clone, Default)]
+pub struct PacketDefinitions {
+    pub clientbound: Vec<Packet>,
+    pub serverbound: Vec<Packet>,
+    pub structs_and_enum: Vec<StructOrEnum>,
 }
 
-pub enum Def {
-    Packet { name: String, fields: Vec<Field> },
-    Annotation(Annotation),
+#[derive(Debug, Clone)]
+pub enum StructOrEnum {
+    Struct(Struct),
+    Enum(Enum),
 }
 
-pub struct Field {
-    ty: FieldType,
-    name: String,
-    init: Option<FieldInitializer>,
+#[derive(Debug, Clone)]
+pub struct Struct {
+    pub name: String,
+    pub fields: Vec<StructField>,
 }
 
-pub struct FieldType {
-    ty: ConcreteType,
-    convert_from: Option<FieldConvertFrom>,
+#[derive(Debug, Clone)]
+pub struct Enum {
+    pub name: String,
+    pub repr: EnumRepr,
+    pub variants: Vec<EnumVariant>,
 }
 
-pub struct FieldConvertFrom {
-    ty: ConcreteType,
-    field: Option<ConcreteTypeField>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum EnumRepr {
+    Integer,
+    String,
 }
 
-pub enum ConcreteType {
+impl EnumRepr {
+    pub fn matches(self, lit: &Literal) -> bool {
+        EnumRepr::from_lit(lit) == self
+    }
+
+    pub fn from_lit(lit: &Literal) -> Self {
+        match lit {
+            Literal::String(_) => EnumRepr::String,
+            Literal::Integer(_) => EnumRepr::Integer,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct EnumVariant {
+    pub fields: Vec<StructField>,
+    pub repr: Literal,
+}
+
+#[derive(Debug, Clone)]
+pub struct StructField {
+    pub name: String,
+    pub ty: FieldType,
+}
+
+#[derive(Debug, Clone)]
+pub struct Packet {
+    pub name: String,
+    pub id: u32,
+    pub fields: Vec<PacketField>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PacketField {
+    pub name: String,
+    pub ty: FieldType,
+    pub ty_from: Option<FieldFrom>,
+    pub value_from: Option<ValueFrom>,
+}
+
+#[derive(Debug, Clone)]
+pub enum FieldFrom {
+    BlockId,
+    BlockType,
+    ItemId,
+    Enum { enum_name: String },
+}
+
+#[derive(Debug, Clone)]
+pub enum ValueFrom {
+    ArrayLength { field: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum FieldType {
     Byte,
     Short,
     Int,
@@ -33,63 +98,336 @@ pub enum ConcreteType {
     Ushort,
     Uint,
     Ulong,
-    Boolean,
-    String,
-    Chat,
-    Angle,
-    Identifier,
     Block,
     Item,
-    Optional(Box<ConcreteType>),
-    Array(Box<ConcreteType>),
-    Enum(Box<Enum>),
-    Struct(Struct),
+    Identifier,
+    Chat,
+    Boolean,
+    Position,
+    Nbt,
+    Varint,
+    Uuid,
+    Float,
+    Angle,
+    Double,
+    StructOrEnum { name: String },
 }
 
-pub enum ConcreteValue {
-    Byte(i8),
-    Short(i16),
-    Int(i32),
-    Long(i64),
-    Ubyte(u8),
-    Ushort(u16),
-    Uint(u32),
-    Ulong(u64),
-    Boolean(bool),
-    Angle(u8),
-    String(String),
-    Chat(String),
-    Identifier(String),
+impl FieldType {
+    pub fn from_construct(construct: &Construct) -> Option<Self> {
+        match construct {
+            Construct::Keyword(keyword) => match keyword {
+                Keyword::Byte => Some(FieldType::Byte),
+                Keyword::Short => Some(FieldType::Short),
+                Keyword::Int => Some(FieldType::Int),
+                Keyword::Long => Some(FieldType::Long),
+                Keyword::Ubyte => Some(FieldType::Ubyte),
+                Keyword::Ushort => Some(FieldType::Ushort),
+                Keyword::Uint => Some(FieldType::Uint),
+                Keyword::Ulong => Some(FieldType::Ulong),
+                Keyword::Block => Some(FieldType::Block),
+                Keyword::Item => Some(FieldType::Item),
+                Keyword::Identifier => Some(FieldType::Identifier),
+                Keyword::Chat => Some(FieldType::Chat),
+                Keyword::Boolean => Some(FieldType::Boolean),
+                Keyword::Position => Some(FieldType::Position),
+                Keyword::Nbt => Some(FieldType::Nbt),
+                Keyword::Varint => Some(FieldType::Varint),
+                Keyword::Uuid => Some(FieldType::Uuid),
+                Keyword::Float => Some(FieldType::Float),
+                Keyword::Angle => Some(FieldType::Angle),
+                Keyword::Double => Some(FieldType::Double),
+                _ => None,
+            },
+            Construct::Identifier(s) => Some(FieldType::StructOrEnum { name: s.clone() }),
+            _ => None,
+        }
+    }
 }
 
-pub struct Enum {
-    repr: ConcreteType,
-    cases: Vec<EnumCase>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, AsRefStr)]
+enum PacketSet {
+    Clientbound,
+    Serverbound,
 }
 
-pub struct EnumCase {
-    name: String,
-    fields: Option<Struct>,
-    value: ConcreteValue,
+impl PacketSet {
+    pub fn keyword(self) -> Keyword {
+        match self {
+            PacketSet::Clientbound => Keyword::Clientbound,
+            PacketSet::Serverbound => Keyword::Serverbound,
+        }
+    }
 }
 
-pub struct Struct {
-    name: Option<String>,
-    fields: Vec<Field>,
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("unexpected end of input")]
+    UnexpectedEof,
+    #[error("no serverbound/clientbound block prefix")]
+    NoBlockPrefix,
+    #[error("did not expect construct {0:?}")]
+    UnexpectedConstruct(Construct),
+    #[error("expected struct/enum name; found something else")]
+    ExpectedStructEnumName,
+    #[error("expected block; found something else")]
+    ExpectedBlock,
+    #[error("did not expect keyword {0:?}")]
+    UnexpectedKeyword(Keyword),
+    #[error("expected keyword; found something else")]
+    ExpectedKeyword,
+    #[error("invalid field type")]
+    InvalidFieldType,
+    #[error("expected token")]
+    ExpectedToken,
+    #[error("missing semicolon")]
+    MissingSemicolon,
+    #[error("enum variants have non-uniform repr")]
+    EnumReprMismatch,
+    #[error("enum has no variants")]
+    EnumHasNoVariants,
+    #[error("expected identifier; found something else")]
+    ExpectedIdentifier,
+    #[error("expected literal; found something else")]
+    ExpectedLiteral,
+    #[error("did not expect token {0:?}")]
+    UnexpectedToken(Token),
+    #[error("missing colon")]
+    MissingColon,
 }
 
-pub enum ConcreteTypeField {
-    BlockId,
-    ItemId,
-    BlockType,
+type Constructs<'a> = std::slice::Iter<'a, Construct>;
+
+pub fn compile_tree(tree: &SyntaxTree) -> anyhow::Result<PacketDefinitions> {
+    let mut defs = PacketDefinitions::default();
+
+    let mut constructs = tree.constructs.iter();
+
+    compile_packet_set(&mut constructs, PacketSet::Clientbound, &mut defs)?;
+    compile_packet_set(&mut constructs, PacketSet::Serverbound, &mut defs)?;
+
+    Ok(defs)
 }
 
-pub enum FieldInitializer {
-    ArrayLength { array_field: String },
+fn compile_packet_set(
+    constructs: &mut Constructs,
+    set: PacketSet,
+    defs: &mut PacketDefinitions,
+) -> Result<(), Error> {
+    // Check block prefix.
+    let prefix = constructs
+        .next()
+        .ok_or(Error::UnexpectedEof)?
+        .as_keyword()
+        .ok_or(Error::NoBlockPrefix)?;
+    if prefix != &set.keyword() {
+        return Err(Error::NoBlockPrefix);
+    }
+
+    // Compile each definition in block. A definition could be either a packet, struct, or enum
+    let constructs = constructs
+        .next()
+        .ok_or(Error::UnexpectedEof)?
+        .as_block()
+        .ok_or(Error::ExpectedBlock)?;
+    let mut constructs = constructs.constructs.iter();
+
+    loop {
+        let construct = match constructs.next() {
+            Some(c) => c,
+            None => break,
+        };
+
+        dbg!(&construct);
+
+        match construct {
+            Construct::Keyword(keyword) => {
+                // Either struct or enum.
+                let name = constructs
+                    .next()
+                    .ok_or(Error::UnexpectedEof)?
+                    .as_identifier()
+                    .ok_or(Error::ExpectedStructEnumName)?;
+                let definition = constructs
+                    .next()
+                    .ok_or(Error::UnexpectedEof)?
+                    .as_block()
+                    .ok_or(Error::ExpectedBlock)?;
+
+                match keyword {
+                    Keyword::Struct => compile_struct(name, definition, defs)?,
+                    Keyword::Enum => compile_enum(name, definition, defs)?,
+                    x => return Err(Error::UnexpectedKeyword(*x)),
+                }
+            }
+            Construct::Identifier(name) => {
+                // Packet definition.
+                let definition = constructs
+                    .next()
+                    .ok_or(Error::UnexpectedEof)?
+                    .as_block()
+                    .ok_or(Error::ExpectedBlock)?;
+
+                // compile_packet(name, definition, defs, set)?;
+            }
+            x => return Err(Error::UnexpectedConstruct(x.clone())),
+        }
+    }
+
+    Ok(())
 }
 
-pub enum Annotation {
-    Manual { path: String },
-    Skip { packet_name: String },
-    SkipTo { id: u32 },
+fn compile_struct(
+    name: &str,
+    definition: &SyntaxTree,
+    defs: &mut PacketDefinitions,
+) -> Result<(), Error> {
+    let mut s = Struct {
+        name: String::from(name),
+        fields: vec![],
+    };
+
+    // Parse fields.
+    let mut constructs = definition.constructs.iter();
+
+    loop {
+        match compile_struct_field(&mut constructs) {
+            Ok(field) => s.fields.push(field),
+            Err(Error::UnexpectedEof) => break,
+            Err(e) => return Err(e),
+        }
+    }
+
+    defs.structs_and_enum.push(StructOrEnum::Struct(s));
+
+    Ok(())
+}
+
+fn compile_enum(
+    name: &str,
+    definition: &SyntaxTree,
+    defs: &mut PacketDefinitions,
+) -> Result<(), Error> {
+    let mut variants = vec![];
+    let mut repr: Option<EnumRepr> = None;
+    let mut constructs = definition.constructs.iter();
+
+    // Parse variants.
+    loop {
+        match compile_enum_variant(&mut constructs) {
+            Ok(variant) => {
+                if let Some(ref repr) = repr {
+                    if !repr.matches(&variant.repr) {
+                        return Err(Error::EnumReprMismatch);
+                    }
+                } else {
+                    repr = Some(EnumRepr::from_lit(&variant.repr));
+                }
+
+                variants.push(variant);
+            }
+            Err(Error::UnexpectedEof) => break,
+            Err(e) => return Err(e),
+        }
+    }
+
+    let e = Enum {
+        name: String::from(name),
+        variants,
+        repr: repr.ok_or(Error::EnumHasNoVariants)?,
+    };
+    defs.structs_and_enum.push(StructOrEnum::Enum(e));
+
+    Ok(())
+}
+
+fn compile_enum_variant(constructs: &mut Constructs) -> Result<EnumVariant, Error> {
+    let name = constructs
+        .next()
+        .ok_or(Error::UnexpectedEof)?
+        .as_identifier()
+        .ok_or(Error::ExpectedIdentifier)?;
+
+    // Optional field declarations
+    let (field_block, equals, repr) = {
+        let mut field_block = None;
+        let mut equals = None;
+        let mut repr = None;
+
+        loop {
+            let next = constructs.next().ok_or(Error::UnexpectedEof)?;
+
+            if let Some(block) = next.as_block() {
+                field_block = Some(block);
+            } else if let Some(tok) = next.as_token() {
+                match tok {
+                    Token::Equals => equals = Some(*tok),
+                    x => return Err(Error::UnexpectedToken(*tok)),
+                }
+            } else if let Some(lit) = next.as_literal() {
+                repr = Some(lit.clone());
+                break;
+            }
+        }
+
+        let comma = constructs
+            .next()
+            .ok_or(Error::UnexpectedEof)?
+            .as_token()
+            .ok_or(Error::ExpectedToken)?;
+        if comma != &Token::Comma {
+            return Err(Error::MissingColon);
+        }
+
+        (
+            field_block,
+            equals.ok_or(Error::ExpectedToken)?,
+            repr.ok_or(Error::ExpectedLiteral)?,
+        )
+    };
+
+    let mut fields = vec![];
+    if let Some(block) = field_block {
+        let mut constructs = block.constructs.iter();
+        loop {
+            match compile_struct_field(&mut constructs) {
+                Ok(field) => fields.push(field),
+                Err(Error::UnexpectedEof) => break,
+                Err(e) => return Err(e),
+            }
+        }
+    }
+
+    Ok(EnumVariant { fields, repr })
+}
+
+fn compile_struct_field(constructs: &mut Constructs) -> Result<StructField, Error> {
+    let ty = constructs
+        .next()
+        .ok_or(Error::UnexpectedEof)?
+        .as_keyword()
+        .ok_or(Error::ExpectedKeyword)?;
+    let ty = FieldType::from_construct(constructs.next().ok_or(Error::UnexpectedEof)?)
+        .ok_or(Error::InvalidFieldType)?;
+
+    let name = constructs
+        .next()
+        .ok_or(Error::UnexpectedEof)?
+        .as_identifier()
+        .ok_or(Error::ExpectedIdentifier)?;
+
+    let semicolon = constructs
+        .next()
+        .ok_or(Error::UnexpectedEof)?
+        .as_token()
+        .ok_or(Error::ExpectedToken)?;
+
+    if semicolon != &Token::Semicolon {
+        Err(Error::MissingSemicolon)
+    } else {
+        Ok(StructField {
+            name: String::from(name),
+            ty,
+        })
+    }
 }

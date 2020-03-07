@@ -19,6 +19,50 @@ pub enum Construct {
     Token(Token),
 }
 
+impl Construct {
+    pub fn as_keyword(&self) -> Option<&Keyword> {
+        match self {
+            Construct::Keyword(x) => Some(x),
+            _ => None,
+        }
+    }
+
+    pub fn as_identifier(&self) -> Option<&str> {
+        match self {
+            Construct::Identifier(x) => Some(x),
+            _ => None,
+        }
+    }
+
+    pub fn as_block(&self) -> Option<&SyntaxTree> {
+        match self {
+            Construct::Block(x) => Some(x),
+            _ => None,
+        }
+    }
+
+    pub fn as_parenthesized(&self) -> Option<&SyntaxTree> {
+        match self {
+            Construct::Parenthesized(x) => Some(x),
+            _ => None,
+        }
+    }
+
+    pub fn as_literal(&self) -> Option<&Literal> {
+        match self {
+            Construct::Literal(x) => Some(x),
+            _ => None,
+        }
+    }
+
+    pub fn as_token(&self) -> Option<&Token> {
+        match self {
+            Construct::Token(x) => Some(x),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Literal {
     Integer(i64),
@@ -93,26 +137,39 @@ pub enum Error {
     UnexpectedEof,
 }
 
+/// Trash parser function. Messy algorithm; don't see this as
+/// clean—but it works.
 fn parse(input: &mut Chars, tree: &mut SyntaxTree, until: Option<char>) -> Result<(), Error> {
     let mut current = String::new();
     loop {
         if let Some(char) = input.next() {
             if until.map_or(false, |until| until == char) {
+                if !current.is_empty() {
+                    tree.constructs.push(construct(&current)?);
+                }
+                current.clear();
                 break;
             }
 
             if char == '{' {
                 let mut block = SyntaxTree::default();
                 parse(input, &mut block, Some('}'))?;
+                if !current.is_empty() {
+                    tree.constructs.push(construct(&current)?);
+                }
+                current.clear();
                 tree.constructs.push(Construct::Block(block));
                 current.clear();
                 continue;
             } else if char == '(' {
                 let mut parenthesized = SyntaxTree::default();
                 parse(input, &mut parenthesized, Some(')'))?;
+                if !current.is_empty() {
+                    tree.constructs.push(construct(&current)?);
+                }
+                current.clear();
                 tree.constructs
                     .push(Construct::Parenthesized(parenthesized));
-                current.clear();
                 continue;
             } else if char == '"' {
                 tree.constructs
