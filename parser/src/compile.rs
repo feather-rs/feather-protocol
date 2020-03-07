@@ -7,7 +7,7 @@ use thiserror::Error;
 pub struct PacketDefinitions {
     pub clientbound: Vec<Packet>,
     pub serverbound: Vec<Packet>,
-    pub structs_and_enum: Vec<StructOrEnum>,
+    pub structs_and_enums: Vec<StructOrEnum>,
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +50,7 @@ impl EnumRepr {
 
 #[derive(Debug, Clone)]
 pub struct EnumVariant {
+    pub name: String,
     pub fields: Vec<StructField>,
     pub repr: Literal,
 }
@@ -270,6 +271,11 @@ fn compile_packet_set(
 
                 // compile_packet(name, definition, defs, set)?;
             }
+            Construct::Token(Token::Annotation) => {
+                // TODO.
+                let _paren = constructs.next().unwrap();
+                let _paren = constructs.next().unwrap();
+            }
             x => return Err(Error::UnexpectedConstruct(x.clone())),
         }
     }
@@ -298,7 +304,7 @@ fn compile_struct(
         }
     }
 
-    defs.structs_and_enum.push(StructOrEnum::Struct(s));
+    defs.structs_and_enums.push(StructOrEnum::Struct(s));
 
     Ok(())
 }
@@ -336,7 +342,7 @@ fn compile_enum(
         variants,
         repr: repr.ok_or(Error::EnumHasNoVariants)?,
     };
-    defs.structs_and_enum.push(StructOrEnum::Enum(e));
+    defs.structs_and_enums.push(StructOrEnum::Enum(e));
 
     Ok(())
 }
@@ -398,7 +404,11 @@ fn compile_enum_variant(constructs: &mut Constructs) -> Result<EnumVariant, Erro
         }
     }
 
-    Ok(EnumVariant { fields, repr })
+    Ok(EnumVariant {
+        fields,
+        repr,
+        name: String::from(name),
+    })
 }
 
 fn compile_struct_field(constructs: &mut Constructs) -> Result<StructField, Error> {

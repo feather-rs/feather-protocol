@@ -1,0 +1,106 @@
+PacketDefinitions {
+    clientbound: [],
+    serverbound: [],
+    structs_and_enums: [
+        Enum(
+            Enum {
+                name: "BossBarColor",
+                repr: Integer,
+                variants: [
+                    EnumVariant {
+                        name: "Pink",
+                        fields: [],
+                        repr: Integer(
+                            0,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Blue",
+                        fields: [],
+                        repr: Integer(
+                            1,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Red",
+                        fields: [],
+                        repr: Integer(
+                            2,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Green",
+                        fields: [],
+                        repr: Integer(
+                            3,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Yellow",
+                        fields: [],
+                        repr: Integer(
+                            4,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Purple",
+                        fields: [],
+                        repr: Integer(
+                            5,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "White",
+                        fields: [],
+                        repr: Integer(
+                            6,
+                        ),
+                    },
+                ],
+            },
+        ),
+        Enum(
+            Enum {
+                name: "BossBarDivision",
+                repr: Integer,
+                variants: [
+                    EnumVariant {
+                        name: "None",
+                        fields: [],
+                        repr: Integer(
+                            0,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Six",
+                        fields: [],
+                        repr: Integer(
+                            1,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Ten",
+                        fields: [],
+                        repr: Integer(
+                            2,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Twelve",
+                        fields: [],
+                        repr: Integer(
+                            3,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Twenty",
+                        fields: [],
+                        repr: Integer(
+                            4,
+                        ),
+                    },
+                ],
+            },
+        ),
+    ],
+}
