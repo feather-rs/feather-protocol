@@ -120,6 +120,7 @@ pub enum Keyword {
     Float,
     Angle,
     Double,
+    String,
     #[strum(serialize = "Opt_chat")]
     OptChat,
 }

@@ -67,8 +67,13 @@ clientbound {
     
     Statistics {
         varint count(statistics.length);
-        struct Statistic { varint category_id; varint statistic_id; } statistics [];
+        Statistic statistics [];
         varint value;
+    }
+
+    struct Statistic {
+        varint category_id;
+        varint statistic_id;
     }
     
     AcknowledgePlayerDigging {
@@ -180,7 +185,7 @@ clientbound {
         varint length;
         varint count (matches.length);
         struct Match {
-            string match;
+            string name;
             opt_chat tooltip;
         } matches [];
     }

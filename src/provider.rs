@@ -24,19 +24,18 @@ pub trait Provider: Send + Sync + 'static {
     /// Deseriazes a `RawChunkSection` into a chunk section.
     fn deserialize_chunk_section(raw: RawChunkSection) -> Result<Self::ChunkSection, Self::Error>;
 
-    /// Converts a block ID from the section or global palette
-    /// into the block ID for the given protocol version.
-    fn convert_block_state_id(version: ProtocolVersion, id: u16) -> u16;
-
-    /// Serializes a block into a raw block ID.
-    fn serialize_block(block: Self::Block) -> u16;
-    /// Deserializes a raw block ID into a block.
-    fn deserialize_block(id: u16) -> Result<Self::Block, Self::Error>;
+    /// Converts a block into its raw ID for the given protocol version.
+    fn block_id(block: Self::Block, version: ProtocolVersion) -> u16;
+    /// Converts a raw block ID for the given protocol version into
+    /// a block.
+    fn block_from_id(id: u16, version: ProtocolVersion) -> Result<Self::Block, Self::Error>;
+    fn block_ty(block: Self::Block, version: ProtocolVersion) -> u16;
+    fn block_from_ty(id: u16, version: ProtocolVersion) -> Result<Self::Block, Self::Error>;
 
     /// Serializes an item into a raw item ID.
-    fn serialize_item(item: Self::Item) -> u16;
+    fn item_id(item: Self::Item, version: ProtocolVersion) -> u16;
     /// Deserializes a raw item ID into an item.
-    fn deserialize_item(id: u16) -> Result<Self::Item, Self::Error>;
+    fn item_from_id(id: u16, version: ProtocolVersion) -> Result<Self::Item, Self::Error>;
 }
 
 /// A generic, serialized form of a raw chunk section.

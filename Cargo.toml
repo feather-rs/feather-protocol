@@ -5,8 +5,9 @@ authors = ["caelunshun <caelunshun@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-bytes = "0.4"
+bytes = "0.5"
 smallbox = "0.8"
+thiserror = "1.0"
 
 [build-dependencies]
 feather-packet-parser = { path = "parser" }

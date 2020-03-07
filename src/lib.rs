@@ -1,6 +1,7 @@
 mod message;
 mod packet;
 mod provider;
+mod types;
 
 pub use message::Message;
 pub use packet::{DynPacket, Packet, PacketReader};

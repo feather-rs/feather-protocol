@@ -1,4 +1,6 @@
+use crate::generate::ident;
 use crate::parse::{Construct, Keyword, Literal, SyntaxTree, Token};
+use proc_macro2::{Ident, TokenStream};
 use std::iter::Peekable;
 use strum_macros::*;
 use thiserror::Error;
@@ -8,6 +10,7 @@ pub struct PacketDefinitions {
     pub clientbound: Vec<Packet>,
     pub serverbound: Vec<Packet>,
     pub structs_and_enums: Vec<StructOrEnum>,
+    pub version: String,
 }
 
 #[derive(Debug, Clone)]
@@ -115,6 +118,43 @@ impl FieldFrom {
             Err(Error::InvalidFieldType)
         }
     }
+
+    pub fn actual_type(&self) -> FieldType {
+        match self {
+            FieldFrom::BlockId | FieldFrom::BlockType => FieldType::Block,
+            FieldFrom::ItemId => FieldType::Item,
+            FieldFrom::Enum { enum_name } => FieldType::StructOrEnum {
+                name: enum_name.clone(),
+            },
+        }
+    }
+
+    pub fn tokens_for_read(&self, input_var: Ident) -> TokenStream {
+        use quote::quote;
+
+        match self {
+            FieldFrom::BlockId => quote! { P::block_from_id(#input_var as u16, version)? },
+            FieldFrom::BlockType => quote! { P::block_from_ty(#input_var as u16, version)? },
+            FieldFrom::ItemId => quote! { P::item_from_id(#input_var as u16, version)? },
+            FieldFrom::Enum { enum_name } => {
+                let enum_name = ident(enum_name);
+                quote! {
+                    #enum_name::from_repr(#input_var as u16)?
+                }
+            }
+        }
+    }
+
+    pub fn tokens_for_write(&self, input_var: TokenStream) -> TokenStream {
+        use quote::quote;
+
+        match self {
+            FieldFrom::BlockId => quote! { P::block_id(#input_var, version) },
+            FieldFrom::BlockType => quote! { P::block_ty(#input_var, version) },
+            FieldFrom::ItemId => quote! { P::item_id(#input_var, version) },
+            FieldFrom::Enum { enum_name: _ } => quote! { #input_var.repr().into() },
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -162,6 +202,7 @@ pub enum FieldType {
     Float,
     Angle,
     Double,
+    String,
     Array(Box<FieldType>),
     StructOrEnum { name: String },
 }
@@ -191,6 +232,7 @@ impl FieldType {
                 Keyword::Float => Some(FieldType::Float),
                 Keyword::Angle => Some(FieldType::Angle),
                 Keyword::Double => Some(FieldType::Double),
+                Keyword::String => Some(FieldType::String),
                 _ => None,
             },
             Construct::Identifier(s) => Some(FieldType::StructOrEnum { name: s.clone() }),
@@ -251,7 +293,10 @@ pub enum Error {
 type Constructs<'a> = Peekable<std::slice::Iter<'a, Construct>>;
 
 pub fn compile_tree(tree: &SyntaxTree) -> anyhow::Result<PacketDefinitions> {
-    let mut defs = PacketDefinitions::default();
+    let mut defs = PacketDefinitions {
+        version: String::from("V1_15_2"), // TODO
+        ..Default::default()
+    };
 
     let mut constructs = tree.constructs.iter().peekable();
 
