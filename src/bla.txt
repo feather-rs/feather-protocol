@@ -1,7 +1,1818 @@
 PacketDefinitions {
-    clientbound: [],
+    clientbound: [
+        Packet {
+            name: "SpawnObject",
+            id: 0,
+            fields: [
+                PacketField {
+                    name: "entity",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "uuid",
+                    ty: Uuid,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "type",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "x",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "y",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "z",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "pitch",
+                    ty: Angle,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "yaw",
+                    ty: Angle,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "data",
+                    ty: Int,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "dx",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "dy",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "dz",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "SpawnExperienceOrb",
+            id: 1,
+            fields: [
+                PacketField {
+                    name: "entity",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "x",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "y",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "z",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "count",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "SpawnGlobalEntity",
+            id: 2,
+            fields: [
+                PacketField {
+                    name: "entity",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "type",
+                    ty: Ubyte,
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "SpawnGlobalEntityType",
+                        },
+                    ),
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "SpawnMob",
+            id: 3,
+            fields: [
+                PacketField {
+                    name: "entity",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "uuid",
+                    ty: Uuid,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "ty",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "x",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "y",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "z",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "yaw",
+                    ty: Angle,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "pitch",
+                    ty: Angle,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "head_pitch",
+                    ty: Angle,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "dx",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "dy",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "dz",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "SpawnPainting",
+            id: 4,
+            fields: [
+                PacketField {
+                    name: "entity",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "uuid",
+                    ty: Uuid,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "motive",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "position",
+                    ty: Position,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "direction",
+                    ty: Ubyte,
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "SpawnPaintingDirection",
+                        },
+                    ),
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "SpawnPlayer",
+            id: 5,
+            fields: [
+                PacketField {
+                    name: "entity",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "uuid",
+                    ty: Uuid,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "x",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "y",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "z",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "yaw",
+                    ty: Angle,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "pitch",
+                    ty: Angle,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "EntityAnimation",
+            id: 6,
+            fields: [
+                PacketField {
+                    name: "entity",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "animation",
+                    ty: Ubyte,
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "EntityAnimationType",
+                        },
+                    ),
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "Statistics",
+            id: 7,
+            fields: [
+                PacketField {
+                    name: "count",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "statistics",
+                    ty: Array(
+                        StructOrEnum {
+                            name: "StatisticsStatistic",
+                        },
+                    ),
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "value",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "AcknowledgePlayerDigging",
+            id: 8,
+            fields: [
+                PacketField {
+                    name: "position",
+                    ty: Position,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "block",
+                    ty: Varint,
+                    ty_from: Some(
+                        BlockId,
+                    ),
+                    value_from: None,
+                },
+                PacketField {
+                    name: "status",
+                    ty: Varint,
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "AcknowledgePlayerDiggingStatus",
+                        },
+                    ),
+                    value_from: None,
+                },
+                PacketField {
+                    name: "successful",
+                    ty: Boolean,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "BlockBreakAnimation",
+            id: 9,
+            fields: [
+                PacketField {
+                    name: "breaker",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "position",
+                    ty: Position,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "destroy_stage",
+                    ty: Ubyte,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "UpdateBlockEntity",
+            id: 10,
+            fields: [
+                PacketField {
+                    name: "os",
+                    ty: Position,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "action",
+                    ty: Ubyte,
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "UpdateBlockEntityAction",
+                        },
+                    ),
+                    value_from: None,
+                },
+                PacketField {
+                    name: "data",
+                    ty: Nbt,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "BlockAction",
+            id: 11,
+            fields: [
+                PacketField {
+                    name: "position",
+                    ty: Position,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "action_id",
+                    ty: Ubyte,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "action_param",
+                    ty: Ubyte,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "block_type",
+                    ty: Varint,
+                    ty_from: Some(
+                        BlockType,
+                    ),
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "BlockChange",
+            id: 12,
+            fields: [
+                PacketField {
+                    name: "position",
+                    ty: Position,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "block",
+                    ty: Varint,
+                    ty_from: Some(
+                        BlockId,
+                    ),
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "BossBar",
+            id: 13,
+            fields: [
+                PacketField {
+                    name: "uuid",
+                    ty: Uuid,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "action",
+                    ty: Varint,
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "data",
+                        },
+                    ),
+                    value_from: None,
+                },
+                PacketField {
+                    name: "data",
+                    ty: StructOrEnum {
+                        name: "BossBarData",
+                    },
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "ServerDifficulty",
+            id: 14,
+            fields: [
+                PacketField {
+                    name: "difficulty",
+                    ty: Ubyte,
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "difficulty.id",
+                        },
+                    ),
+                    value_from: None,
+                },
+                PacketField {
+                    name: "difficulty_locked",
+                    ty: Boolean,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "ChatMessage",
+            id: 15,
+            fields: [
+                PacketField {
+                    name: "data",
+                    ty: Chat,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "position",
+                    ty: Ubyte,
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "ChatMessagePosition",
+                        },
+                    ),
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "MultiBlockChange",
+            id: 16,
+            fields: [
+                PacketField {
+                    name: "chunk_x",
+                    ty: Int,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "chunk_z",
+                    ty: Int,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "count",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "records",
+                    ty: Array(
+                        StructOrEnum {
+                            name: "MultiBlockChangeRecord",
+                        },
+                    ),
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "TabComplete",
+            id: 17,
+            fields: [
+                PacketField {
+                    name: "transaction_id",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "start",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "length",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "count",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "matches",
+                    ty: Array(
+                        StructOrEnum {
+                            name: "TabCompleteMatch",
+                        },
+                    ),
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "DeclareCommands",
+            id: 18,
+            fields: [
+                PacketField {
+                    name: "count",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "nodes",
+                    ty: Array(
+                        StructOrEnum {
+                            name: "node",
+                        },
+                    ),
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "root_index",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "WindowConfirmation",
+            id: 19,
+            fields: [
+                PacketField {
+                    name: "window_id",
+                    ty: Ubyte,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "action_number",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "accepted",
+                    ty: Boolean,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "CloseWindow",
+            id: 20,
+            fields: [
+                PacketField {
+                    name: "window_id",
+                    ty: Ubyte,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "WindowItems",
+            id: 21,
+            fields: [
+                PacketField {
+                    name: "window_id",
+                    ty: Ubyte,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "count",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "slots[]",
+                    ty: StructOrEnum {
+                        name: "slot",
+                    },
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "WindowProperty",
+            id: 22,
+            fields: [
+                PacketField {
+                    name: "window_id",
+                    ty: Ubyte,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "property",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "value",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "SetSlot",
+            id: 23,
+            fields: [
+                PacketField {
+                    name: "window_id",
+                    ty: Ubyte,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "slot_index",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "slot",
+                    ty: StructOrEnum {
+                        name: "slot",
+                    },
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "SetCooldown",
+            id: 24,
+            fields: [
+                PacketField {
+                    name: "item",
+                    ty: Varint,
+                    ty_from: Some(
+                        ItemId,
+                    ),
+                    value_from: None,
+                },
+                PacketField {
+                    name: "cooldown_ticks",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "PluginMessage",
+            id: 25,
+            fields: [
+                PacketField {
+                    name: "channel",
+                    ty: Identifier,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "data[]",
+                    ty: Byte,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "NamedSoundEffect",
+            id: 26,
+            fields: [
+                PacketField {
+                    name: "name",
+                    ty: Identifier,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "category",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "posx",
+                    ty: Int,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "posy",
+                    ty: Int,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "posz",
+                    ty: Int,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "volume",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "pitch",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "Disconnect",
+            id: 27,
+            fields: [
+                PacketField {
+                    name: "reason",
+                    ty: Chat,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "EntityStatus",
+            id: 28,
+            fields: [
+                PacketField {
+                    name: "entity",
+                    ty: Int,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "status",
+                    ty: Byte,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "Explosion",
+            id: 29,
+            fields: [
+                PacketField {
+                    name: "x",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "y",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "z",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "strength",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "record_count",
+                    ty: Int,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "records[]",
+                    ty: StructOrEnum {
+                        name: "ExplosionRecord",
+                    },
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "player_dx",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "player_dy",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "player_dz",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "UnloadChunk",
+            id: 30,
+            fields: [
+                PacketField {
+                    name: "x",
+                    ty: Int,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "z",
+                    ty: Int,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "ChangeGameState",
+            id: 31,
+            fields: [
+                PacketField {
+                    name: "reason",
+                    ty: Ubyte,
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "ChangeGameStateReason",
+                        },
+                    ),
+                    value_from: None,
+                },
+                PacketField {
+                    name: "value",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "OpenHorseWindow",
+            id: 32,
+            fields: [
+                PacketField {
+                    name: "window_id",
+                    ty: Ubyte,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "num_slots",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "entity",
+                    ty: Int,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "KeepAlive",
+            id: 33,
+            fields: [
+                PacketField {
+                    name: "id",
+                    ty: Long,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "ChunkData",
+            id: 34,
+            fields: [],
+        },
+        Packet {
+            name: "Effect",
+            id: 35,
+            fields: [
+                PacketField {
+                    name: "id",
+                    ty: Int,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "position",
+                    ty: Position,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "data",
+                    ty: Int,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "disable_relative_volume",
+                    ty: Boolean,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "UpdateLight",
+            id: 36,
+            fields: [],
+        },
+        Packet {
+            name: "JoinGame",
+            id: 37,
+            fields: [
+                PacketField {
+                    name: "player_eid",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "gamemode",
+                    ty: Ubyte,
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "gamemode.id",
+                        },
+                    ),
+                    value_from: None,
+                },
+                PacketField {
+                    name: "dimension",
+                    ty: Int,
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "dimension.id",
+                        },
+                    ),
+                    value_from: None,
+                },
+                PacketField {
+                    name: "hashed_seed",
+                    ty: Long,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "max_players",
+                    ty: Ubyte,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "level_type",
+                    ty: StructOrEnum {
+                        name: "string",
+                    },
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "JoinGameLevelType",
+                        },
+                    ),
+                    value_from: None,
+                },
+                PacketField {
+                    name: "view_distance",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "reduced_debug_info",
+                    ty: Boolean,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "enable_respawn_screen",
+                    ty: Boolean,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "EntityPosition",
+            id: 38,
+            fields: [
+                PacketField {
+                    name: "entity",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "dx",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "dy",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "dz",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "on_ground",
+                    ty: Boolean,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "EntityPositionAndRotation",
+            id: 39,
+            fields: [
+                PacketField {
+                    name: "entity",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "dx",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "dy",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "dz",
+                    ty: Short,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "yaw",
+                    ty: Angle,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "pitch",
+                    ty: Angle,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "on_ground",
+                    ty: Boolean,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "EntityRotation",
+            id: 40,
+            fields: [
+                PacketField {
+                    name: "entity",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "yaw",
+                    ty: Angle,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "pitch",
+                    ty: Angle,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "on_ground",
+                    ty: Boolean,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "EntityMovement",
+            id: 41,
+            fields: [
+                PacketField {
+                    name: "entity",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "VehicleMove",
+            id: 42,
+            fields: [
+                PacketField {
+                    name: "x",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "y",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "z",
+                    ty: Double,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "yaw",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "pitch",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "OpenBook",
+            id: 43,
+            fields: [
+                PacketField {
+                    name: "hand",
+                    ty: Varint,
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "hand.id",
+                        },
+                    ),
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "OpenWindow",
+            id: 44,
+            fields: [
+                PacketField {
+                    name: "window_id",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "type",
+                    ty: Varint,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "title",
+                    ty: Chat,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "OpenSignEditor",
+            id: 45,
+            fields: [
+                PacketField {
+                    name: "position",
+                    ty: StructOrEnum {
+                        name: "posiion",
+                    },
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "CraftRecipeResponse",
+            id: 46,
+            fields: [
+                PacketField {
+                    name: "window_id",
+                    ty: Ubyte,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "recipe",
+                    ty: Identifier,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "PlayerAbilities",
+            id: 47,
+            fields: [
+                PacketField {
+                    name: "flags",
+                    ty: Byte,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "flying_speed",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+                PacketField {
+                    name: "fov_modifier",
+                    ty: Float,
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "CombatEvent",
+            id: 48,
+            fields: [
+                PacketField {
+                    name: "event_id",
+                    ty: Varint,
+                    ty_from: Some(
+                        Enum {
+                            enum_name: "event",
+                        },
+                    ),
+                    value_from: None,
+                },
+                PacketField {
+                    name: "event",
+                    ty: StructOrEnum {
+                        name: "CombatEventType",
+                    },
+                    ty_from: None,
+                    value_from: None,
+                },
+            ],
+        },
+        Packet {
+            name: "PlayerInfo",
+            id: 49,
+            fields: [],
+        },
+    ],
     serverbound: [],
     structs_and_enums: [
+        Enum(
+            Enum {
+                name: "SpawnGlobalEntityType",
+                repr: Integer,
+                variants: [
+                    EnumVariant {
+                        name: "Thunderbolt",
+                        fields: [],
+                        repr: Integer(
+                            1,
+                        ),
+                    },
+                ],
+            },
+        ),
+        Enum(
+            Enum {
+                name: "SpawnPaintingDirection",
+                repr: Integer,
+                variants: [
+                    EnumVariant {
+                        name: "North",
+                        fields: [],
+                        repr: Integer(
+                            2,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "South",
+                        fields: [],
+                        repr: Integer(
+                            0,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "West",
+                        fields: [],
+                        repr: Integer(
+                            1,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "East",
+                        fields: [],
+                        repr: Integer(
+                            3,
+                        ),
+                    },
+                ],
+            },
+        ),
+        Enum(
+            Enum {
+                name: "EntityAnimationType",
+                repr: Integer,
+                variants: [
+                    EnumVariant {
+                        name: "SwingMainArm",
+                        fields: [],
+                        repr: Integer(
+                            0,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "TakeDamage",
+                        fields: [],
+                        repr: Integer(
+                            1,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "LeaveBed",
+                        fields: [],
+                        repr: Integer(
+                            2,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "SwingOffhand",
+                        fields: [],
+                        repr: Integer(
+                            3,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "CriticalEffect",
+                        fields: [],
+                        repr: Integer(
+                            4,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "MagicCriticalEffect",
+                        fields: [],
+                        repr: Integer(
+                            5,
+                        ),
+                    },
+                ],
+            },
+        ),
+        Struct(
+            Struct {
+                name: "StatisticsStatistic",
+                fields: [
+                    StructField {
+                        name: "category_id",
+                        ty: Varint,
+                        ty_from: None,
+                    },
+                    StructField {
+                        name: "statistic_id",
+                        ty: Varint,
+                        ty_from: None,
+                    },
+                ],
+            },
+        ),
+        Enum(
+            Enum {
+                name: "AcknowledgePlayerDiggingStatus",
+                repr: Integer,
+                variants: [
+                    EnumVariant {
+                        name: "StartedDigging",
+                        fields: [],
+                        repr: Integer(
+                            0,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "CancelledDigging",
+                        fields: [],
+                        repr: Integer(
+                            1,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "FinishedDigging",
+                        fields: [],
+                        repr: Integer(
+                            2,
+                        ),
+                    },
+                ],
+            },
+        ),
+        Enum(
+            Enum {
+                name: "UpdateBlockEntityAction",
+                repr: Integer,
+                variants: [
+                    EnumVariant {
+                        name: "SetMobSpawnerData",
+                        fields: [],
+                        repr: Integer(
+                            1,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "SetCommandBlockText",
+                        fields: [],
+                        repr: Integer(
+                            2,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "UpdateBeacon",
+                        fields: [],
+                        repr: Integer(
+                            3,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "SetMobHead",
+                        fields: [],
+                        repr: Integer(
+                            4,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Conduit",
+                        fields: [],
+                        repr: Integer(
+                            5,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "UpdateBanner",
+                        fields: [],
+                        repr: Integer(
+                            6,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "SetStructureData",
+                        fields: [],
+                        repr: Integer(
+                            7,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "SetGatewayDestination",
+                        fields: [],
+                        repr: Integer(
+                            8,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "SetSignText",
+                        fields: [],
+                        repr: Integer(
+                            9,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "DeclareBed",
+                        fields: [],
+                        repr: Integer(
+                            11,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "SetJigsawBlockData",
+                        fields: [],
+                        repr: Integer(
+                            12,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "SetCampfireItems",
+                        fields: [],
+                        repr: Integer(
+                            13,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "SetBeehiveData",
+                        fields: [],
+                        repr: Integer(
+                            14,
+                        ),
+                    },
+                ],
+            },
+        ),
+        Enum(
+            Enum {
+                name: "BossBarData",
+                repr: Integer,
+                variants: [
+                    EnumVariant {
+                        name: "Add",
+                        fields: [
+                            StructField {
+                                name: "title",
+                                ty: Chat,
+                                ty_from: None,
+                            },
+                            StructField {
+                                name: "health",
+                                ty: Float,
+                                ty_from: None,
+                            },
+                            StructField {
+                                name: "color",
+                                ty: Varint,
+                                ty_from: Some(
+                                    Enum {
+                                        enum_name: "BossBarColor",
+                                    },
+                                ),
+                            },
+                            StructField {
+                                name: "division",
+                                ty: Varint,
+                                ty_from: Some(
+                                    Enum {
+                                        enum_name: "BossBarDivision",
+                                    },
+                                ),
+                            },
+                            StructField {
+                                name: "flags",
+                                ty: Ubyte,
+                                ty_from: Some(
+                                    Enum {
+                                        enum_name: "BossBarFlags",
+                                    },
+                                ),
+                            },
+                        ],
+                        repr: Integer(
+                            0,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Remove",
+                        fields: [],
+                        repr: Integer(
+                            1,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "UpdateHealth",
+                        fields: [
+                            StructField {
+                                name: "health",
+                                ty: Float,
+                                ty_from: None,
+                            },
+                        ],
+                        repr: Integer(
+                            2,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "UpdateTitle",
+                        fields: [
+                            StructField {
+                                name: "title",
+                                ty: Chat,
+                                ty_from: None,
+                            },
+                        ],
+                        repr: Integer(
+                            3,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "UpdateStyle",
+                        fields: [
+                            StructField {
+                                name: "color",
+                                ty: Varint,
+                                ty_from: Some(
+                                    Enum {
+                                        enum_name: "BossBarColor",
+                                    },
+                                ),
+                            },
+                            StructField {
+                                name: "division",
+                                ty: Varint,
+                                ty_from: Some(
+                                    Enum {
+                                        enum_name: "BossBarDivision",
+                                    },
+                                ),
+                            },
+                        ],
+                        repr: Integer(
+                            4,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "UpdateFlags",
+                        fields: [
+                            StructField {
+                                name: "flags",
+                                ty: Ubyte,
+                                ty_from: Some(
+                                    Enum {
+                                        enum_name: "BossBarFlags",
+                                    },
+                                ),
+                            },
+                        ],
+                        repr: Integer(
+                            5,
+                        ),
+                    },
+                ],
+            },
+        ),
         Enum(
             Enum {
                 name: "BossBarColor",
@@ -97,6 +1908,305 @@ PacketDefinitions {
                         fields: [],
                         repr: Integer(
                             4,
+                        ),
+                    },
+                ],
+            },
+        ),
+        Enum(
+            Enum {
+                name: "ChatMessagePosition",
+                repr: Integer,
+                variants: [
+                    EnumVariant {
+                        name: "Chat",
+                        fields: [],
+                        repr: Integer(
+                            0,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "SystemMessage",
+                        fields: [],
+                        repr: Integer(
+                            1,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "GameInfo",
+                        fields: [],
+                        repr: Integer(
+                            2,
+                        ),
+                    },
+                ],
+            },
+        ),
+        Struct(
+            Struct {
+                name: "MultiBlockChangeRecord",
+                fields: [
+                    StructField {
+                        name: "horizontal_position",
+                        ty: Ubyte,
+                        ty_from: None,
+                    },
+                    StructField {
+                        name: "vertical_position",
+                        ty: Ubyte,
+                        ty_from: None,
+                    },
+                    StructField {
+                        name: "block",
+                        ty: Varint,
+                        ty_from: Some(
+                            BlockId,
+                        ),
+                    },
+                ],
+            },
+        ),
+        Struct(
+            Struct {
+                name: "TabCompleteMatch",
+                fields: [
+                    StructField {
+                        name: "match",
+                        ty: StructOrEnum {
+                            name: "string",
+                        },
+                        ty_from: None,
+                    },
+                    StructField {
+                        name: "tooltip",
+                        ty: OptChat,
+                        ty_from: None,
+                    },
+                ],
+            },
+        ),
+        Struct(
+            Struct {
+                name: "ExplosionRecord",
+                fields: [
+                    StructField {
+                        name: "x",
+                        ty: Byte,
+                        ty_from: None,
+                    },
+                    StructField {
+                        name: "y",
+                        ty: Byte,
+                        ty_from: None,
+                    },
+                    StructField {
+                        name: "z",
+                        ty: Byte,
+                        ty_from: None,
+                    },
+                ],
+            },
+        ),
+        Enum(
+            Enum {
+                name: "ChangeGameStateReason",
+                repr: Integer,
+                variants: [
+                    EnumVariant {
+                        name: "InvalidBed",
+                        fields: [],
+                        repr: Integer(
+                            0,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "EndRaining",
+                        fields: [],
+                        repr: Integer(
+                            1,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "BeginRaining",
+                        fields: [],
+                        repr: Integer(
+                            2,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "ChangeGamemode",
+                        fields: [],
+                        repr: Integer(
+                            3,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "ExitEnd",
+                        fields: [],
+                        repr: Integer(
+                            4,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "DemoMessage",
+                        fields: [],
+                        repr: Integer(
+                            5,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "ArrowHittingPlayer",
+                        fields: [],
+                        repr: Integer(
+                            6,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "FadeValue",
+                        fields: [],
+                        repr: Integer(
+                            7,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "FadeTime",
+                        fields: [],
+                        repr: Integer(
+                            8,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "PufferfishSting",
+                        fields: [],
+                        repr: Integer(
+                            9,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "ElderGuardianAppearance",
+                        fields: [],
+                        repr: Integer(
+                            10,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "EnableRespawnScreen",
+                        fields: [],
+                        repr: Integer(
+                            11,
+                        ),
+                    },
+                ],
+            },
+        ),
+        Enum(
+            Enum {
+                name: "JoinGameLevelType",
+                repr: String,
+                variants: [
+                    EnumVariant {
+                        name: "Default",
+                        fields: [],
+                        repr: String(
+                            "default",
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Flat",
+                        fields: [],
+                        repr: String(
+                            "flat",
+                        ),
+                    },
+                    EnumVariant {
+                        name: "LargeBiomes",
+                        fields: [],
+                        repr: String(
+                            "largeBiomes",
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Amplified",
+                        fields: [],
+                        repr: String(
+                            "amplified",
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Customized",
+                        fields: [],
+                        repr: String(
+                            "customized",
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Buffet",
+                        fields: [],
+                        repr: String(
+                            "buffet",
+                        ),
+                    },
+                    EnumVariant {
+                        name: "Default11",
+                        fields: [],
+                        repr: String(
+                            "default_1_1",
+                        ),
+                    },
+                ],
+            },
+        ),
+        Enum(
+            Enum {
+                name: "CombatEventType",
+                repr: Integer,
+                variants: [
+                    EnumVariant {
+                        name: "EnterCombat",
+                        fields: [],
+                        repr: Integer(
+                            0,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "EndCombat",
+                        fields: [
+                            StructField {
+                                name: "duration",
+                                ty: Varint,
+                                ty_from: None,
+                            },
+                            StructField {
+                                name: "entity",
+                                ty: Int,
+                                ty_from: None,
+                            },
+                        ],
+                        repr: Integer(
+                            1,
+                        ),
+                    },
+                    EnumVariant {
+                        name: "EntityDead",
+                        fields: [
+                            StructField {
+                                name: "player",
+                                ty: Varint,
+                                ty_from: None,
+                            },
+                            StructField {
+                                name: "entity",
+                                ty: Int,
+                                ty_from: None,
+                            },
+                            StructField {
+                                name: "message",
+                                ty: Chat,
+                                ty_from: None,
+                            },
+                        ],
+                        repr: Integer(
+                            2,
                         ),
                     },
                 ],

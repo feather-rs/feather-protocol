@@ -1,5 +1,5 @@
 use crate::parse::{Construct, Keyword, Literal, SyntaxTree, Token};
-use strum::*;
+use std::iter::Peekable;
 use strum_macros::*;
 use thiserror::Error;
 
@@ -59,6 +59,7 @@ pub struct EnumVariant {
 pub struct StructField {
     pub name: String,
     pub ty: FieldType,
+    pub ty_from: Option<FieldFrom>,
 }
 
 #[derive(Debug, Clone)]
@@ -84,9 +85,58 @@ pub enum FieldFrom {
     Enum { enum_name: String },
 }
 
+impl FieldFrom {
+    pub fn from_construct(
+        construct: &Construct,
+        packet_name: &str,
+        constructs: &mut Constructs,
+        defs: &mut PacketDefinitions,
+    ) -> Result<Self, Error> {
+        if let Some(keyword) = construct.as_keyword() {
+            // Enum.
+            let ty = make_anonymous_struct_or_enum(constructs, packet_name, defs, keyword)?;
+
+            let name = match ty {
+                FieldType::StructOrEnum { name } => name,
+                _ => unreachable!(),
+            };
+
+            Ok(FieldFrom::Enum { enum_name: name })
+        } else if let Some(identifier) = construct.as_identifier() {
+            match identifier.as_str() {
+                "block.id" => Ok(FieldFrom::BlockId),
+                "block.type" => Ok(FieldFrom::BlockType),
+                "item.id" => Ok(FieldFrom::ItemId),
+                x => Ok(FieldFrom::Enum {
+                    enum_name: String::from(x),
+                }),
+            }
+        } else {
+            Err(Error::InvalidFieldType)
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum ValueFrom {
     ArrayLength { field: String },
+}
+
+impl ValueFrom {
+    pub fn from_str(x: &str) -> Option<Self> {
+        let split: Vec<&str> = x.split(".").collect();
+
+        if split.len() != 2 {
+            None
+        } else {
+            match split[1] {
+                "length" => Some(ValueFrom::ArrayLength {
+                    field: String::from(split[0]),
+                }),
+                _ => None,
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -103,6 +153,7 @@ pub enum FieldType {
     Item,
     Identifier,
     Chat,
+    OptChat,
     Boolean,
     Position,
     Nbt,
@@ -111,6 +162,7 @@ pub enum FieldType {
     Float,
     Angle,
     Double,
+    Array(Box<FieldType>),
     StructOrEnum { name: String },
 }
 
@@ -130,6 +182,7 @@ impl FieldType {
                 Keyword::Item => Some(FieldType::Item),
                 Keyword::Identifier => Some(FieldType::Identifier),
                 Keyword::Chat => Some(FieldType::Chat),
+                Keyword::OptChat => Some(FieldType::OptChat),
                 Keyword::Boolean => Some(FieldType::Boolean),
                 Keyword::Position => Some(FieldType::Position),
                 Keyword::Nbt => Some(FieldType::Nbt),
@@ -175,8 +228,6 @@ pub enum Error {
     ExpectedBlock,
     #[error("did not expect keyword {0:?}")]
     UnexpectedKeyword(Keyword),
-    #[error("expected keyword; found something else")]
-    ExpectedKeyword,
     #[error("invalid field type")]
     InvalidFieldType,
     #[error("expected token")]
@@ -193,16 +244,16 @@ pub enum Error {
     ExpectedLiteral,
     #[error("did not expect token {0:?}")]
     UnexpectedToken(Token),
-    #[error("missing colon")]
-    MissingColon,
+    #[error("invalid value-from clause")]
+    InvalidValueFrom,
 }
 
-type Constructs<'a> = std::slice::Iter<'a, Construct>;
+type Constructs<'a> = Peekable<std::slice::Iter<'a, Construct>>;
 
 pub fn compile_tree(tree: &SyntaxTree) -> anyhow::Result<PacketDefinitions> {
     let mut defs = PacketDefinitions::default();
 
-    let mut constructs = tree.constructs.iter();
+    let mut constructs = tree.constructs.iter().peekable();
 
     compile_packet_set(&mut constructs, PacketSet::Clientbound, &mut defs)?;
     compile_packet_set(&mut constructs, PacketSet::Serverbound, &mut defs)?;
@@ -233,6 +284,8 @@ fn compile_packet_set(
         .ok_or(Error::ExpectedBlock)?;
     let mut constructs = constructs.constructs.iter();
 
+    let mut next_packet_id = 0u32;
+
     loop {
         let construct = match constructs.next() {
             Some(c) => c,
@@ -256,8 +309,8 @@ fn compile_packet_set(
                     .ok_or(Error::ExpectedBlock)?;
 
                 match keyword {
-                    Keyword::Struct => compile_struct(name, definition, defs)?,
-                    Keyword::Enum => compile_enum(name, definition, defs)?,
+                    Keyword::Struct => compile_struct(&name, definition, defs)?,
+                    Keyword::Enum => compile_enum(&name, definition, defs)?,
                     x => return Err(Error::UnexpectedKeyword(*x)),
                 }
             }
@@ -269,7 +322,8 @@ fn compile_packet_set(
                     .as_block()
                     .ok_or(Error::ExpectedBlock)?;
 
-                // compile_packet(name, definition, defs, set)?;
+                compile_packet(name, definition, defs, set, next_packet_id)?;
+                next_packet_id += 1;
             }
             Construct::Token(Token::Annotation) => {
                 // TODO.
@@ -294,10 +348,10 @@ fn compile_struct(
     };
 
     // Parse fields.
-    let mut constructs = definition.constructs.iter();
+    let mut constructs = definition.constructs.iter().peekable();
 
     loop {
-        match compile_struct_field(&mut constructs) {
+        match compile_struct_field(&mut constructs, name, defs) {
             Ok(field) => s.fields.push(field),
             Err(Error::UnexpectedEof) => break,
             Err(e) => return Err(e),
@@ -316,11 +370,11 @@ fn compile_enum(
 ) -> Result<(), Error> {
     let mut variants = vec![];
     let mut repr: Option<EnumRepr> = None;
-    let mut constructs = definition.constructs.iter();
+    let mut constructs = definition.constructs.iter().peekable();
 
     // Parse variants.
     loop {
-        match compile_enum_variant(&mut constructs) {
+        match compile_enum_variant(&mut constructs, name, defs) {
             Ok(variant) => {
                 if let Some(ref repr) = repr {
                     if !repr.matches(&variant.repr) {
@@ -347,18 +401,186 @@ fn compile_enum(
     Ok(())
 }
 
-fn compile_enum_variant(constructs: &mut Constructs) -> Result<EnumVariant, Error> {
-    let name = constructs
+fn compile_packet(
+    name: &str,
+    definition: &SyntaxTree,
+    defs: &mut PacketDefinitions,
+    set: PacketSet,
+    id: u32,
+) -> Result<(), Error> {
+    // Compile fields.
+    let mut fields = vec![];
+
+    let mut constructs = definition.constructs.iter().peekable();
+    loop {
+        match compile_packet_field(&mut constructs, name, defs) {
+            Ok(field) => fields.push(field),
+            Err(Error::UnexpectedEof) => break,
+            Err(e) => return Err(e),
+        }
+    }
+
+    let packet = Packet {
+        name: String::from(name),
+        id,
+        fields,
+    };
+    match set {
+        PacketSet::Clientbound => &mut defs.clientbound,
+        PacketSet::Serverbound => &mut defs.serverbound,
+    }
+    .push(packet);
+
+    Ok(())
+}
+
+fn compile_packet_field(
+    constructs: &mut Constructs,
+    packet_name: &str,
+    defs: &mut PacketDefinitions,
+) -> Result<PacketField, Error> {
+    let ty = constructs.next().ok_or(Error::UnexpectedEof)?;
+
+    // Possible types: normal keyword, struct/enum, anonymous enum, anonymous struct.
+
+    let mut ty = packet_field_type_from_construct(ty, constructs, packet_name, defs)?;
+
+    // There may be a "field from," which indicates the type from which the field's actual
+    // value is derived. e.g. varint field but from a block's state ID.
+    let (ty_from, name) = parse_ty_from_and_name(constructs, packet_name, defs)?;
+
+    // There may be a "value from," which indicates the value this field is bound to. e.g.
+    // length of a separate array field.
+    let (value_from, _semicolon) = {
+        let mut value_from = None;
+        loop {
+            let next = constructs.next().ok_or(Error::UnexpectedEof)?;
+
+            if let Some(identifier) = next.as_identifier() {
+                value_from = Some(ValueFrom::from_str(&identifier).ok_or(Error::InvalidValueFrom)?);
+            } else if let Some(tok) = next.as_token() {
+                if tok == &Token::Array {
+                    ty = FieldType::Array(Box::new(ty));
+                    continue;
+                }
+
+                if tok != &Token::Semicolon {
+                    return Err(Error::UnexpectedToken(*tok));
+                }
+
+                break (value_from, *tok);
+            }
+        }
+    };
+
+    let field = PacketField {
+        name,
+        ty,
+        value_from,
+        ty_from,
+    };
+
+    Ok(field)
+}
+
+fn parse_ty_from_and_name(
+    constructs: &mut Constructs,
+    packet_name: &str,
+    defs: &mut PacketDefinitions,
+) -> Result<(Option<FieldFrom>, String), Error> {
+    let mut ty_from = None;
+    loop {
+        let next = constructs.next().ok_or(Error::UnexpectedEof)?;
+
+        if let Some(paren) = next.as_parenthesized() {
+            // there is a "field from"
+            let mut constructs = paren.constructs.iter().peekable();
+            let ty = constructs.next().ok_or(Error::UnexpectedEof)?;
+
+            ty_from = Some(FieldFrom::from_construct(
+                ty,
+                packet_name,
+                &mut constructs,
+                defs,
+            )?);
+        } else if let Some(name) = next.as_identifier() {
+            break Ok((ty_from, name));
+        } else {
+            break Err(Error::UnexpectedConstruct(next.clone()));
+        }
+    }
+}
+
+fn packet_field_type_from_construct(
+    ty: &Construct,
+    constructs: &mut Constructs,
+    packet_name: &str,
+    defs: &mut PacketDefinitions,
+) -> Result<FieldType, Error> {
+    if let Some(keyword) = ty.as_keyword() {
+        match keyword {
+            Keyword::Enum | Keyword::Struct => Ok(make_anonymous_struct_or_enum(
+                constructs,
+                packet_name,
+                defs,
+                keyword,
+            )?),
+            k => Ok(FieldType::from_construct(&Construct::Keyword(k.clone()))
+                .ok_or(Error::InvalidFieldType)?),
+        }
+    } else if let Some(identifier) = ty.as_identifier() {
+        Ok(FieldType::StructOrEnum {
+            name: String::from(identifier),
+        })
+    } else {
+        Err(Error::InvalidFieldType)
+    }
+}
+
+fn make_anonymous_struct_or_enum(
+    constructs: &mut Constructs,
+    packet_name: &str,
+    defs: &mut PacketDefinitions,
+    keyword: &Keyword,
+) -> Result<FieldType, Error> {
+    // Compile anonymous enum/struct.
+    let next = constructs.next().ok_or(Error::UnexpectedEof)?;
+    let name = next.as_identifier().ok_or(Error::ExpectedIdentifier)?;
+    let name = anonymous_type_name(packet_name, &name);
+
+    let definition = constructs
         .next()
         .ok_or(Error::UnexpectedEof)?
-        .as_identifier()
-        .ok_or(Error::ExpectedIdentifier)?;
+        .as_block()
+        .ok_or(Error::ExpectedBlock)?;
+
+    if keyword == &Keyword::Enum {
+        compile_enum(&name, definition, defs)?;
+    } else {
+        compile_struct(&name, definition, defs)?;
+    }
+    Ok(FieldType::StructOrEnum { name })
+}
+
+fn anonymous_type_name(packet_name: &str, name: &str) -> String {
+    let mut packet_name = String::from(packet_name);
+    packet_name.push_str(name);
+    packet_name
+}
+
+fn compile_enum_variant(
+    constructs: &mut Constructs,
+    enum_name: &str,
+    defs: &mut PacketDefinitions,
+) -> Result<EnumVariant, Error> {
+    let next = constructs.next().ok_or(Error::UnexpectedEof)?;
+    let name = next.as_identifier().ok_or(Error::ExpectedIdentifier)?;
 
     // Optional field declarations
-    let (field_block, equals, repr) = {
+    let (field_block, _equals, repr) = {
         let mut field_block = None;
         let mut equals = None;
-        let mut repr = None;
+        let repr;
 
         loop {
             let next = constructs.next().ok_or(Error::UnexpectedEof)?;
@@ -368,21 +590,12 @@ fn compile_enum_variant(constructs: &mut Constructs) -> Result<EnumVariant, Erro
             } else if let Some(tok) = next.as_token() {
                 match tok {
                     Token::Equals => equals = Some(*tok),
-                    x => return Err(Error::UnexpectedToken(*tok)),
+                    _ => return Err(Error::UnexpectedToken(*tok)),
                 }
             } else if let Some(lit) = next.as_literal() {
                 repr = Some(lit.clone());
                 break;
             }
-        }
-
-        let comma = constructs
-            .next()
-            .ok_or(Error::UnexpectedEof)?
-            .as_token()
-            .ok_or(Error::ExpectedToken)?;
-        if comma != &Token::Comma {
-            return Err(Error::MissingColon);
         }
 
         (
@@ -392,11 +605,17 @@ fn compile_enum_variant(constructs: &mut Constructs) -> Result<EnumVariant, Erro
         )
     };
 
+    let _comma = constructs
+        .next()
+        .ok_or(Error::UnexpectedEof)?
+        .as_token()
+        .ok_or(Error::ExpectedToken)?;
+
     let mut fields = vec![];
     if let Some(block) = field_block {
-        let mut constructs = block.constructs.iter();
+        let mut constructs = block.constructs.iter().peekable();
         loop {
-            match compile_struct_field(&mut constructs) {
+            match compile_struct_field(&mut constructs, enum_name, defs) {
                 Ok(field) => fields.push(field),
                 Err(Error::UnexpectedEof) => break,
                 Err(e) => return Err(e),
@@ -411,20 +630,15 @@ fn compile_enum_variant(constructs: &mut Constructs) -> Result<EnumVariant, Erro
     })
 }
 
-fn compile_struct_field(constructs: &mut Constructs) -> Result<StructField, Error> {
-    let ty = constructs
-        .next()
-        .ok_or(Error::UnexpectedEof)?
-        .as_keyword()
-        .ok_or(Error::ExpectedKeyword)?;
-    let ty = FieldType::from_construct(constructs.next().ok_or(Error::UnexpectedEof)?)
-        .ok_or(Error::InvalidFieldType)?;
+fn compile_struct_field(
+    constructs: &mut Constructs,
+    struct_name: &str,
+    defs: &mut PacketDefinitions,
+) -> Result<StructField, Error> {
+    let ty = constructs.next().ok_or(Error::UnexpectedEof)?;
+    let ty = FieldType::from_construct(ty).ok_or(Error::InvalidFieldType)?;
 
-    let name = constructs
-        .next()
-        .ok_or(Error::UnexpectedEof)?
-        .as_identifier()
-        .ok_or(Error::ExpectedIdentifier)?;
+    let (ty_from, name) = parse_ty_from_and_name(constructs, struct_name, defs)?;
 
     let semicolon = constructs
         .next()
@@ -437,6 +651,7 @@ fn compile_struct_field(constructs: &mut Constructs) -> Result<StructField, Erro
     } else {
         Ok(StructField {
             name: String::from(name),
+            ty_from,
             ty,
         })
     }

@@ -17,7 +17,7 @@ pub async fn compile_def(input: impl AsRef<Path>, output: impl AsRef<Path>) -> a
     let ttree = parse::parse_str(&in_str)?;
     let compiled = compile::compile_tree(&ttree)?;
 
-    let mut out_str = format!("{:#?}", compiled);
+    let out_str = format!("{:#?}", compiled);
     output.write_all(out_str.as_bytes()).await?;
 
     Ok(())

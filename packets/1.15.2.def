@@ -24,7 +24,7 @@ clientbound {
     
     SpawnGlobalEntity {
         varint entity;
-        ubyte(enum { Thunderbolt = 1 }) type;
+        ubyte(enum Type { Thunderbolt = 1, }) type;
     }
     
     SpawnMob {
@@ -47,7 +47,7 @@ clientbound {
         uuid uuid;
         varint motive;
         position position;
-        ubyte(enum { North = 2, South = 0, West = 1, East = 3 }) direction;
+        ubyte(enum Direction { North = 2, South = 0, West = 1, East = 3, }) direction;
     }
     
     SpawnPlayer {
@@ -62,19 +62,19 @@ clientbound {
     
     EntityAnimation {
         varint entity;
-        ubyte(enum { SwingMainArm = 0, TakeDamage = 1, LeaveBed = 2, SwingOffhand = 3, CriticalEffect = 4, MagicCriticalEffect = 5 }) animation;
+        ubyte(enum Type { SwingMainArm = 0, TakeDamage = 1, LeaveBed = 2, SwingOffhand = 3, CriticalEffect = 4, MagicCriticalEffect = 5, }) animation;
     }
     
     Statistics {
         varint count(statistics.length);
-        struct { varint category_id, varint statistic_id } statistics [];
+        struct Statistic { varint category_id; varint statistic_id; } statistics [];
         varint value;
     }
     
     AcknowledgePlayerDigging {
         position position;
         varint(block.id) block;
-        varint(enum { StartedDigging = 0, CancelledDigging = 1, FinishedDigging = 2 }) status;
+        varint(enum Status { StartedDigging = 0, CancelledDigging = 1, FinishedDigging = 2, }) status;
         boolean successful;
     }
     
@@ -86,7 +86,7 @@ clientbound {
     
     UpdateBlockEntity {
         position os;
-        ubyte(enum {
+        ubyte(enum Action {
             SetMobSpawnerData = 1,
             SetCommandBlockText = 2,
             UpdateBeacon = 3,
@@ -119,7 +119,7 @@ clientbound {
     BossBar {
         uuid uuid;
         varint(data) action;
-        enum {
+        enum Data {
             Add {
                 chat title;
                 float health;
@@ -160,14 +160,14 @@ clientbound {
     
     ChatMessage {
         chat data;
-        ubyte(enum { Chat = 0, SystemMessage = 1, GameInfo = 2 }) position;
+        ubyte(enum Position { Chat = 0, SystemMessage = 1, GameInfo = 2, }) position;
     }
     
     MultiBlockChange {
         int chunk_x;
         int chunk_z;
         varint count(records.length);
-        struct {
+        struct Record {
             ubyte horizontal_position;
             ubyte vertical_position;
             varint(block.id) block;
@@ -179,9 +179,9 @@ clientbound {
         varint start;
         varint length;
         varint count (matches.length);
-        struct {
+        struct Match {
             string match;
-            boolean is_chat => chat tooltip;
+            opt_chat tooltip;
         } matches [];
     }
 
@@ -255,7 +255,7 @@ clientbound {
         float strength;
 
         int record_count(records.length);
-        struct {
+        struct Record {
             byte x;
             byte y;
             byte z;
@@ -272,7 +272,7 @@ clientbound {
     }
 
     ChangeGameState {
-        ubyte(enum {
+        ubyte(enum Reason {
             InvalidBed = 0,
             EndRaining = 1,
             BeginRaining = 2,
@@ -320,7 +320,7 @@ clientbound {
         int(dimension.id) dimension;
         long hashed_seed;
         ubyte max_players;
-        string(enum {
+        string(enum LevelType {
             Default = "default",
             Flat = "flat",
             LargeBiomes = "largeBiomes",
@@ -402,7 +402,7 @@ clientbound {
 
     CombatEvent {
         varint(event) event_id;
-        enum {
+        enum Type {
             EnterCombat {
 
             } = 0,

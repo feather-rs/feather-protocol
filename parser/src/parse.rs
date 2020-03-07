@@ -27,9 +27,10 @@ impl Construct {
         }
     }
 
-    pub fn as_identifier(&self) -> Option<&str> {
+    pub fn as_identifier(&self) -> Option<String> {
         match self {
-            Construct::Identifier(x) => Some(x),
+            Construct::Identifier(x) => Some(x.clone()),
+            Construct::Keyword(k) => Some(k.to_string().to_lowercase()),
             _ => None,
         }
     }
@@ -119,6 +120,8 @@ pub enum Keyword {
     Float,
     Angle,
     Double,
+    #[strum(serialize = "Opt_chat")]
+    OptChat,
 }
 
 pub fn parse_str(input: &str) -> anyhow::Result<SyntaxTree> {
