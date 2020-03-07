@@ -741,10 +741,12 @@ PacketDefinitions {
                     ),
                 },
                 PacketField {
-                    name: "slots[]",
-                    ty: StructOrEnum {
-                        name: "slot",
-                    },
+                    name: "slots",
+                    ty: Array(
+                        StructOrEnum {
+                            name: "slot",
+                        },
+                    ),
                     ty_from: None,
                     value_from: None,
                 },
@@ -831,8 +833,10 @@ PacketDefinitions {
                     value_from: None,
                 },
                 PacketField {
-                    name: "data[]",
-                    ty: Byte,
+                    name: "data",
+                    ty: Array(
+                        Byte,
+                    ),
                     ty_from: None,
                     value_from: None,
                 },

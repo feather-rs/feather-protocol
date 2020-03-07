@@ -204,7 +204,7 @@ clientbound {
     WindowItems {
         ubyte window_id;
         short count(slots.length);
-        slot slots[];
+        slot slots [];
     }
 
     WindowProperty {
@@ -226,7 +226,7 @@ clientbound {
 
     PluginMessage {
         identifier channel;
-        byte data[];
+        byte data [];
     }
 
     NamedSoundEffect {
