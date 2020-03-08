@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         linux-stable:
-          rustup_toolchain: stable,
+          rustup_toolchain: stable
           image_name: 'ubuntu-18.04'
         linux-nightly:
           rustup_toolchain: nightly

@@ -132,7 +132,7 @@ impl FieldFrom {
             FieldFrom::BlockId => quote! { P::block_id(#input_var, version) },
             FieldFrom::BlockType => quote! { P::block_ty(#input_var, version) },
             FieldFrom::ItemId => quote! { P::item_id(#input_var, version) },
-            FieldFrom::Enum { enum_name: _ } => quote! { #input_var.repr().into() },
+            FieldFrom::Enum { enum_name: _ } => quote! { #input_var.repr() },
         }
     }
 }

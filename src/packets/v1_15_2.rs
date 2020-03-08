@@ -17,6 +17,14 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "SpawnGlobalEntityType").into()),
         }
     }
+    pub fn write_to(self, buf: &mut BytesMut) {
+        match self {
+            SpawnGlobalEntityType::Thunderbolt {} => {}
+            SpawnGlobalEntityType::_Phantom(_) => {
+                panic!("phantom in {} not allowed", "SpawnGlobalEntityType")
+            }
+        }
+    }
     pub fn repr(&self) -> i64 {
         match self {
             SpawnGlobalEntityType::Thunderbolt { .. } => 1i64,
@@ -44,6 +52,17 @@ where
             1i64 => Ok(SpawnPaintingDirection::West {}),
             3i64 => Ok(SpawnPaintingDirection::East {}),
             repr => Err(Error::InvalidEnumRepr(repr, "SpawnPaintingDirection").into()),
+        }
+    }
+    pub fn write_to(self, buf: &mut BytesMut) {
+        match self {
+            SpawnPaintingDirection::North {} => {}
+            SpawnPaintingDirection::South {} => {}
+            SpawnPaintingDirection::West {} => {}
+            SpawnPaintingDirection::East {} => {}
+            SpawnPaintingDirection::_Phantom(_) => {
+                panic!("phantom in {} not allowed", "SpawnPaintingDirection")
+            }
         }
     }
     pub fn repr(&self) -> i64 {
@@ -80,6 +99,19 @@ where
             4i64 => Ok(EntityAnimationType::CriticalEffect {}),
             5i64 => Ok(EntityAnimationType::MagicCriticalEffect {}),
             repr => Err(Error::InvalidEnumRepr(repr, "EntityAnimationType").into()),
+        }
+    }
+    pub fn write_to(self, buf: &mut BytesMut) {
+        match self {
+            EntityAnimationType::SwingMainArm {} => {}
+            EntityAnimationType::TakeDamage {} => {}
+            EntityAnimationType::LeaveBed {} => {}
+            EntityAnimationType::SwingOffhand {} => {}
+            EntityAnimationType::CriticalEffect {} => {}
+            EntityAnimationType::MagicCriticalEffect {} => {}
+            EntityAnimationType::_Phantom(_) => {
+                panic!("phantom in {} not allowed", "EntityAnimationType")
+            }
         }
     }
     pub fn repr(&self) -> i64 {
@@ -141,6 +173,17 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "AcknowledgePlayerDiggingStatus").into()),
         }
     }
+    pub fn write_to(self, buf: &mut BytesMut) {
+        match self {
+            AcknowledgePlayerDiggingStatus::StartedDigging {} => {}
+            AcknowledgePlayerDiggingStatus::CancelledDigging {} => {}
+            AcknowledgePlayerDiggingStatus::FinishedDigging {} => {}
+            AcknowledgePlayerDiggingStatus::_Phantom(_) => panic!(
+                "phantom in {} not allowed",
+                "AcknowledgePlayerDiggingStatus"
+            ),
+        }
+    }
     pub fn repr(&self) -> i64 {
         match self {
             AcknowledgePlayerDiggingStatus::StartedDigging { .. } => 0i64,
@@ -189,6 +232,26 @@ where
             13i64 => Ok(UpdateBlockEntityAction::SetCampfireItems {}),
             14i64 => Ok(UpdateBlockEntityAction::SetBeehiveData {}),
             repr => Err(Error::InvalidEnumRepr(repr, "UpdateBlockEntityAction").into()),
+        }
+    }
+    pub fn write_to(self, buf: &mut BytesMut) {
+        match self {
+            UpdateBlockEntityAction::SetMobSpawnerData {} => {}
+            UpdateBlockEntityAction::SetCommandBlockText {} => {}
+            UpdateBlockEntityAction::UpdateBeacon {} => {}
+            UpdateBlockEntityAction::SetMobHead {} => {}
+            UpdateBlockEntityAction::Conduit {} => {}
+            UpdateBlockEntityAction::UpdateBanner {} => {}
+            UpdateBlockEntityAction::SetStructureData {} => {}
+            UpdateBlockEntityAction::SetGatewayDestination {} => {}
+            UpdateBlockEntityAction::SetSignText {} => {}
+            UpdateBlockEntityAction::DeclareBed {} => {}
+            UpdateBlockEntityAction::SetJigsawBlockData {} => {}
+            UpdateBlockEntityAction::SetCampfireItems {} => {}
+            UpdateBlockEntityAction::SetBeehiveData {} => {}
+            UpdateBlockEntityAction::_Phantom(_) => {
+                panic!("phantom in {} not allowed", "UpdateBlockEntityAction")
+            }
         }
     }
     pub fn repr(&self) -> i64 {
@@ -281,6 +344,42 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "BossBarData").into()),
         }
     }
+    pub fn write_to(self, buf: &mut BytesMut) {
+        match self {
+            BossBarData::Add {
+                title,
+                health,
+                color,
+                division,
+                flags,
+            } => {
+                buf.put_string(title);
+                buf.put_f32(health as f32);
+                let color = color.repr();
+                buf.put_i32(color as i32);
+                let division = division.repr();
+                buf.put_i32(division as i32);
+                buf.put_u8(flags as u8);
+            }
+            BossBarData::Remove {} => {}
+            BossBarData::UpdateHealth { health } => {
+                buf.put_f32(health as f32);
+            }
+            BossBarData::UpdateTitle { title } => {
+                buf.put_string(title);
+            }
+            BossBarData::UpdateStyle { color, division } => {
+                let color = color.repr();
+                buf.put_i32(color as i32);
+                let division = division.repr();
+                buf.put_i32(division as i32);
+            }
+            BossBarData::UpdateFlags { flags } => {
+                buf.put_u8(flags as u8);
+            }
+            BossBarData::_Phantom(_) => panic!("phantom in {} not allowed", "BossBarData"),
+        }
+    }
     pub fn repr(&self) -> i64 {
         match self {
             BossBarData::Add { .. } => 0i64,
@@ -319,6 +418,18 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "BossBarColor").into()),
         }
     }
+    pub fn write_to(self, buf: &mut BytesMut) {
+        match self {
+            BossBarColor::Pink {} => {}
+            BossBarColor::Blue {} => {}
+            BossBarColor::Red {} => {}
+            BossBarColor::Green {} => {}
+            BossBarColor::Yellow {} => {}
+            BossBarColor::Purple {} => {}
+            BossBarColor::White {} => {}
+            BossBarColor::_Phantom(_) => panic!("phantom in {} not allowed", "BossBarColor"),
+        }
+    }
     pub fn repr(&self) -> i64 {
         match self {
             BossBarColor::Pink { .. } => 0i64,
@@ -354,6 +465,16 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "BossBarDivision").into()),
         }
     }
+    pub fn write_to(self, buf: &mut BytesMut) {
+        match self {
+            BossBarDivision::None {} => {}
+            BossBarDivision::Six {} => {}
+            BossBarDivision::Ten {} => {}
+            BossBarDivision::Twelve {} => {}
+            BossBarDivision::Twenty {} => {}
+            BossBarDivision::_Phantom(_) => panic!("phantom in {} not allowed", "BossBarDivision"),
+        }
+    }
     pub fn repr(&self) -> i64 {
         match self {
             BossBarDivision::None { .. } => 0i64,
@@ -381,6 +502,16 @@ where
             1i64 => Ok(ChatMessagePosition::SystemMessage {}),
             2i64 => Ok(ChatMessagePosition::GameInfo {}),
             repr => Err(Error::InvalidEnumRepr(repr, "ChatMessagePosition").into()),
+        }
+    }
+    pub fn write_to(self, buf: &mut BytesMut) {
+        match self {
+            ChatMessagePosition::Chat {} => {}
+            ChatMessagePosition::SystemMessage {} => {}
+            ChatMessagePosition::GameInfo {} => {}
+            ChatMessagePosition::_Phantom(_) => {
+                panic!("phantom in {} not allowed", "ChatMessagePosition")
+            }
         }
     }
     pub fn repr(&self) -> i64 {
@@ -533,6 +664,25 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "ChangeGameStateReason").into()),
         }
     }
+    pub fn write_to(self, buf: &mut BytesMut) {
+        match self {
+            ChangeGameStateReason::InvalidBed {} => {}
+            ChangeGameStateReason::EndRaining {} => {}
+            ChangeGameStateReason::BeginRaining {} => {}
+            ChangeGameStateReason::ChangeGamemode {} => {}
+            ChangeGameStateReason::ExitEnd {} => {}
+            ChangeGameStateReason::DemoMessage {} => {}
+            ChangeGameStateReason::ArrowHittingPlayer {} => {}
+            ChangeGameStateReason::FadeValue {} => {}
+            ChangeGameStateReason::FadeTime {} => {}
+            ChangeGameStateReason::PufferfishSting {} => {}
+            ChangeGameStateReason::ElderGuardianAppearance {} => {}
+            ChangeGameStateReason::EnableRespawnScreen {} => {}
+            ChangeGameStateReason::_Phantom(_) => {
+                panic!("phantom in {} not allowed", "ChangeGameStateReason")
+            }
+        }
+    }
     pub fn repr(&self) -> i64 {
         match self {
             ChangeGameStateReason::InvalidBed { .. } => 0i64,
@@ -589,6 +739,25 @@ where
                 })
             }
             repr => Err(Error::InvalidEnumRepr(repr, "CombatEventType").into()),
+        }
+    }
+    pub fn write_to(self, buf: &mut BytesMut) {
+        match self {
+            CombatEventType::EnterCombat {} => {}
+            CombatEventType::EndCombat { duration, entity } => {
+                buf.put_i32(duration as i32);
+                buf.put_i32(entity as i32);
+            }
+            CombatEventType::EntityDead {
+                player,
+                entity,
+                message,
+            } => {
+                buf.put_i32(player as i32);
+                buf.put_i32(entity as i32);
+                buf.put_string(message);
+            }
+            CombatEventType::_Phantom(_) => panic!("phantom in {} not allowed", "CombatEventType"),
         }
     }
     pub fn repr(&self) -> i64 {

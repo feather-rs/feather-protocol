@@ -91,12 +91,14 @@ fn generate_enum(e: &Enum) -> TokenStream {
 
     let mut defs = vec![];
     let mut read_froms = vec![];
+    let mut write_tos = vec![];
     let mut reprs = vec![];
 
     for variant in &e.variants {
-        let (def, read_from, _write_to, repr) = generate_enum_variant(e, variant);
+        let (def, read_from, write_to, repr) = generate_enum_variant(e, variant);
         defs.push(def);
         read_froms.push(read_from);
+        write_tos.push(write_to);
         reprs.push(repr);
     }
 
@@ -111,6 +113,13 @@ fn generate_enum(e: &Enum) -> TokenStream {
                 match repr {
                     #(#read_froms ,)*
                     repr => Err(Error::InvalidEnumRepr(repr, #name_str).into()),
+                }
+            }
+
+            pub fn write_to(self, buf: &mut BytesMut) {
+                match self {
+                    #(#write_tos ,)*
+                    #name::_Phantom(_) => panic!("phantom in {} not allowed", #name_str),
                 }
             }
 
@@ -183,8 +192,24 @@ fn generate_enum_variant_read_from(e: &Enum, variant: &EnumVariant) -> TokenStre
     }
 }
 
-fn generate_enum_variant_write_to(_e: &Enum, _variant: &EnumVariant) -> TokenStream {
-    quote! {}
+fn generate_enum_variant_write_to(e: &Enum, variant: &EnumVariant) -> TokenStream {
+    let name = ident(&variant.name);
+    let enum_name = ident(&e.name);
+
+    let mut write_to = vec![];
+    let mut fields = vec![];
+
+    for field in &variant.fields {
+        let name = ident(&field.name);
+        fields.push(quote! { #name });
+        write_to.push(write_to_statement(field));
+    }
+
+    quote! {
+        #enum_name::#name { #(#fields, )* } => {
+            #(#write_to ;)*
+        }
+    }
 }
 
 fn generate_enum_variant_repr(e: &Enum, variant: &EnumVariant) -> TokenStream {
@@ -283,7 +308,9 @@ fn write_fn_ident(field_name: &str, ty: &FieldType) -> TokenStream {
                 }
             }
         }
-        FieldType::String => quote! { buf.put_string(#field_name) },
+        FieldType::String | FieldType::Identifier | FieldType::Chat => {
+            quote! { buf.put_string(#field_name) }
+        }
         FieldType::Array(_) => panic!("struct can't have array field"),
         x => {
             let ident = ident(format!("put_{}", tokenize_field_type(x)));
