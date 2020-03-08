@@ -6,7 +6,7 @@ pub type DynPacket = SmallBox<dyn Packet, S32>;
 
 /// Represents a packet.
 pub trait Packet: Send + Sync + 'static {
-    fn write_to(&self, buf: &mut BytesMut);
+    fn write_to(self, buf: &mut BytesMut);
 }
 
 pub trait PacketReader: Send + Sync + 'static + Default {

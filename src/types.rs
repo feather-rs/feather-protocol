@@ -14,6 +14,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub trait BytesExt {
     fn try_get_var_int(&mut self) -> Result<i32>;
     fn try_get_string(&mut self) -> Result<String>;
+    fn try_get_bool(&mut self) -> Result<bool>;
 
     fn try_get_i8(&mut self) -> Result<i8>;
     fn try_get_i16(&mut self) -> Result<i16>;
@@ -29,7 +30,11 @@ pub trait BytesExt {
     fn try_get_u64(&mut self) -> Result<u64>;
 }
 
-pub trait BytesMutExt {}
+pub trait BytesMutExt {
+    fn put_var_int(&mut self, x: i32);
+    fn put_string(&mut self, x: impl AsRef<str>);
+    fn put_bool(&mut self, x: bool);
+}
 
 macro_rules! try_get_impl {
     ($this:ident, $size:expr, $method:ident) => {{
@@ -47,6 +52,10 @@ impl BytesExt for Bytes {
     }
 
     fn try_get_string(&mut self) -> Result<String> {
+        unimplemented!()
+    }
+
+    fn try_get_bool(&mut self) -> Result<bool> {
         unimplemented!()
     }
 
@@ -91,4 +100,16 @@ impl BytesExt for Bytes {
     }
 }
 
-impl BytesMutExt for BytesMut {}
+impl BytesMutExt for BytesMut {
+    fn put_var_int(&mut self, _x: i32) {
+        unimplemented!()
+    }
+
+    fn put_string(&mut self, _x: impl AsRef<str>) {
+        unimplemented!()
+    }
+
+    fn put_bool(&mut self, _x: bool) {
+        unimplemented!()
+    }
+}

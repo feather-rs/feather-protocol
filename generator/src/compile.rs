@@ -28,34 +28,14 @@ pub struct Struct {
 #[derive(Debug, Clone)]
 pub struct Enum {
     pub name: String,
-    pub repr: EnumRepr,
     pub variants: Vec<EnumVariant>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum EnumRepr {
-    Integer,
-    String,
-}
-
-impl EnumRepr {
-    pub fn matches(self, lit: &Literal) -> bool {
-        EnumRepr::from_lit(lit) == self
-    }
-
-    pub fn from_lit(lit: &Literal) -> Self {
-        match lit {
-            Literal::String(_) => EnumRepr::String,
-            Literal::Integer(_) => EnumRepr::Integer,
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
 pub struct EnumVariant {
     pub name: String,
     pub fields: Vec<StructField>,
-    pub repr: Literal,
+    pub repr: i64,
 }
 
 #[derive(Debug, Clone)]
@@ -139,7 +119,7 @@ impl FieldFrom {
             FieldFrom::Enum { enum_name } => {
                 let enum_name = ident(enum_name);
                 quote! {
-                    #enum_name::from_repr(#input_var as u16)?
+                    #enum_name::read_from(buf, #input_var as i64)?
                 }
             }
         }
@@ -160,6 +140,7 @@ impl FieldFrom {
 #[derive(Debug, Clone)]
 pub enum ValueFrom {
     ArrayLength { field: String },
+    EnumRepr { field: String },
 }
 
 impl ValueFrom {
@@ -171,6 +152,9 @@ impl ValueFrom {
         } else {
             match split[1] {
                 "length" => Some(ValueFrom::ArrayLength {
+                    field: String::from(split[0]),
+                }),
+                "repr" => Some(ValueFrom::EnumRepr {
                     field: String::from(split[0]),
                 }),
                 _ => None,
@@ -276,14 +260,8 @@ pub enum Error {
     ExpectedToken,
     #[error("missing semicolon")]
     MissingSemicolon,
-    #[error("enum variants have non-uniform repr")]
-    EnumReprMismatch,
-    #[error("enum has no variants")]
-    EnumHasNoVariants,
     #[error("expected identifier; found something else")]
     ExpectedIdentifier,
-    #[error("expected literal; found something else")]
-    ExpectedLiteral,
     #[error("did not expect token {0:?}")]
     UnexpectedToken(Token),
     #[error("invalid value-from clause")]
@@ -414,21 +392,12 @@ fn compile_enum(
     defs: &mut PacketDefinitions,
 ) -> Result<(), Error> {
     let mut variants = vec![];
-    let mut repr: Option<EnumRepr> = None;
     let mut constructs = definition.constructs.iter().peekable();
 
     // Parse variants.
     loop {
         match compile_enum_variant(&mut constructs, name, defs) {
             Ok(variant) => {
-                if let Some(ref repr) = repr {
-                    if !repr.matches(&variant.repr) {
-                        return Err(Error::EnumReprMismatch);
-                    }
-                } else {
-                    repr = Some(EnumRepr::from_lit(&variant.repr));
-                }
-
                 variants.push(variant);
             }
             Err(Error::UnexpectedEof) => break,
@@ -439,7 +408,6 @@ fn compile_enum(
     let e = Enum {
         name: String::from(name),
         variants,
-        repr: repr.ok_or(Error::EnumHasNoVariants)?,
     };
     defs.structs_and_enums.push(StructOrEnum::Enum(e));
 
@@ -644,16 +612,15 @@ fn compile_enum_variant(
                     _ => return Err(Error::UnexpectedToken(*tok)),
                 }
             } else if let Some(lit) = next.as_literal() {
-                repr = Some(lit.clone());
+                match lit {
+                    Literal::Integer(x) => repr = *x,
+                    _ => return Err(Error::UnexpectedConstruct(next.clone())),
+                }
                 break;
             }
         }
 
-        (
-            field_block,
-            equals.ok_or(Error::ExpectedToken)?,
-            repr.ok_or(Error::ExpectedLiteral)?,
-        )
+        (field_block, equals.ok_or(Error::ExpectedToken)?, repr)
     };
 
     let _comma = constructs

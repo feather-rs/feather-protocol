@@ -24,7 +24,7 @@ clientbound {
     
     SpawnGlobalEntity {
         varint entity;
-        ubyte(enum Type { Thunderbolt = 1, }) type;
+        ubyte(enum Type { Thunderbolt = 1, }) ty;
     }
     
     SpawnMob {
@@ -123,20 +123,20 @@ clientbound {
     
     BossBar {
         uuid uuid;
-        varint(data) action;
+        varint action(data.repr);
         enum Data {
             Add {
                 chat title;
                 float health;
                 varint(BossBarColor) color;
                 varint(BossBarDivision) division;
-                ubyte(BossBarFlags) flags;
+                ubyte flags;
             } = 0,
             Remove = 1,
             UpdateHealth { float health; } = 2,
             UpdateTitle { chat title; } = 3,
             UpdateStyle { varint(BossBarColor) color; varint(BossBarDivision) division; } = 4,
-            UpdateFlags { ubyte(BossBarFlags) flags; } = 5,
+            UpdateFlags { ubyte flags; } = 5,
         } data;
     }
     
@@ -325,15 +325,7 @@ clientbound {
         int(dimension.id) dimension;
         long hashed_seed;
         ubyte max_players;
-        string(enum LevelType {
-            Default = "default",
-            Flat = "flat",
-            LargeBiomes = "largeBiomes",
-            Amplified = "amplified",
-            Customized = "customized",
-            Buffet = "buffet",
-            Default11 = "default_1_1",
-        }) level_type;
+        string level_type;
 
         varint view_distance;
         boolean reduced_debug_info;

@@ -25,9 +25,11 @@ fn generate_structs_and_enums(defs: &PacketDefinitions) -> anyhow::Result<TokenS
     }
 
     Ok(quote! {
+        #![allow(warnings)]
         use bytes::{Bytes, BytesMut, Buf, BufMut};
         use crate::{BytesExt, BytesMutExt, Provider, Error, ProtocolVersion};
-        const VERSION: dProtocolVersion = ProtocolVersion::V1_15_2;
+        const VERSION: ProtocolVersion = ProtocolVersion::V1_15_2;
+
         #(#tokens)*
     })
 }
@@ -59,6 +61,7 @@ fn generate_struct(s: &Struct) -> TokenStream {
     let res = quote! {
         pub struct #name<P: Provider> {
             #(#fields ,)*
+            _phantom: std::marker::PhantomData<P>,
         }
 
         impl <P> #name<P> where P: Provider {
@@ -68,10 +71,11 @@ fn generate_struct(s: &Struct) -> TokenStream {
 
                 Ok(Self {
                     #(#field_initializers)*
+                    _phantom: Default::default(),
                 })
             }
 
-            pub fn write_to(&self, buf: &mut BytesMut) {
+            pub fn write_to(self, buf: &mut BytesMut) {
                 let version = VERSION;
                 #(#write_to)*
             }
@@ -87,23 +91,33 @@ fn generate_enum(e: &Enum) -> TokenStream {
 
     let mut defs = vec![];
     let mut read_froms = vec![];
+    let mut reprs = vec![];
 
     for variant in &e.variants {
-        let (def, read_from, write_to, repr, from_repr) = generate_enum_variant(e, variant);
+        let (def, read_from, _write_to, repr) = generate_enum_variant(e, variant);
         defs.push(def);
         read_froms.push(read_from);
+        reprs.push(repr);
     }
 
     let res = quote! {
         pub enum #name<P: Provider> {
             #(#defs ,)*
+            _Phantom(std::marker::PhantomData<P>),
         }
 
         impl <P> #name<P> where P: Provider {
-            pub fn read_from(buf: &mut Bytes, repr: EnumRepr) -> anyhow::Result<Self> {
+            pub fn read_from(buf: &mut Bytes, repr: i64) -> anyhow::Result<Self> {
                 match repr {
                     #(#read_froms ,)*
-                    repr => Err(Error::InvalidEnumRepr(repr, #name_str)),
+                    repr => Err(Error::InvalidEnumRepr(repr, #name_str).into()),
+                }
+            }
+
+            pub fn repr(&self) -> i64 {
+                match self {
+                    #(#reprs ,)*
+                    #name::_Phantom(_) => panic!("phantom in {} not allowed", #name_str),
                 }
             }
         }
@@ -114,23 +128,16 @@ fn generate_enum(e: &Enum) -> TokenStream {
 fn generate_enum_variant(
     e: &Enum,
     variant: &EnumVariant,
-) -> (
-    TokenStream,
-    TokenStream,
-    TokenStream,
-    TokenStream,
-    TokenStream,
-) {
+) -> (TokenStream, TokenStream, TokenStream, TokenStream) {
     (
         generate_enum_variant_def(e, variant),
         generate_enum_variant_read_from(e, variant),
         generate_enum_variant_write_to(e, variant),
         generate_enum_variant_repr(e, variant),
-        generate_enum_variant_from_repr(e, variant),
     )
 }
 
-fn generate_enum_variant_def(e: &Enum, variant: &EnumVariant) -> TokenStream {
+fn generate_enum_variant_def(_e: &Enum, variant: &EnumVariant) -> TokenStream {
     let name = ident(&variant.name);
 
     let mut fields = vec![];
@@ -164,7 +171,7 @@ fn generate_enum_variant_read_from(e: &Enum, variant: &EnumVariant) -> TokenStre
         finish.push(quote! { #fname });
     }
 
-    let repr = variant.repr.as_enum_repr();
+    let repr = variant.repr;
 
     quote! {
         #repr => {
@@ -176,16 +183,17 @@ fn generate_enum_variant_read_from(e: &Enum, variant: &EnumVariant) -> TokenStre
     }
 }
 
-fn generate_enum_variant_write_to(e: &Enum, variant: &EnumVariant) -> TokenStream {
+fn generate_enum_variant_write_to(_e: &Enum, _variant: &EnumVariant) -> TokenStream {
     quote! {}
 }
 
 fn generate_enum_variant_repr(e: &Enum, variant: &EnumVariant) -> TokenStream {
-    quote! {}
-}
-
-fn generate_enum_variant_from_repr(e: &Enum, variant: &EnumVariant) -> TokenStream {
-    quote! {}
+    let enum_name = ident(&e.name);
+    let name = ident(&variant.name);
+    let repr_lit = variant.repr;
+    quote! {
+       #enum_name::#name { .. } => #repr_lit
+    }
 }
 
 fn read_from_statement(field: &StructField) -> TokenStream {
@@ -229,10 +237,12 @@ fn read_fn_ident(ty: &FieldType) -> TokenStream {
                 }
             }
         }
-        FieldType::Identifier | FieldType::Chat => quote! { buf.try_get_string()? },
+        FieldType::Identifier | FieldType::Chat | FieldType::String => {
+            quote! { buf.try_get_string()? }
+        }
         x => {
             let ident = ident(format!("try_get_{}", tokenize_field_type(x)));
-            quote! { #ident()? }
+            quote! { buf.#ident()? }
         }
     }
 }
@@ -245,7 +255,7 @@ fn write_to_statement(field: &StructField) -> TokenStream {
     let field_name = ident(field_name);
 
     let convert = if let Some(ref ty_from) = field.ty_from {
-        let tokens = ty_from.tokens_for_write(quote! { self.#field_name });
+        let tokens = ty_from.tokens_for_write(quote! { #field_name });
 
         Some(quote! {
             let #field_name = #tokens
@@ -277,7 +287,8 @@ fn write_fn_ident(field_name: &str, ty: &FieldType) -> TokenStream {
         FieldType::Array(_) => panic!("struct can't have array field"),
         x => {
             let ident = ident(format!("put_{}", tokenize_field_type(x)));
-            quote! { buf.#ident(#field_name) }
+            let x = tokenize_field_type(x);
+            quote! { buf.#ident(#field_name as #x) }
         }
     }
 }

@@ -13,7 +13,7 @@ pub trait Provider: Send + Sync + 'static {
     /// The item type for this application.
     type Item: Clone + Send + Sync;
     /// The error type.
-    type Error: std::error::Error;
+    type Error: std::error::Error + Send + Sync;
 
     /// Converts a chunk into an array of 10 chunk sections.
     fn chunk_sections(chunk: Self::Chunk) -> [Option<Self::ChunkSection>; 10];
