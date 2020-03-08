@@ -9,6 +9,8 @@ bytes = "0.5"
 smallbox = "0.8"
 thiserror = "1.0"
 anyhow = "1.0"
+uuid = "0.8"
+hematite-nbt = "0.4"
 
 [build-dependencies]
 feather-packet-parser = { path = "generator" }

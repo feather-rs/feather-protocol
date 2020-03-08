@@ -1,7 +1,22 @@
 //! Extension traits for `Bytes` and `BytesMut` which support Minecraft types.
 use bytes::Buf;
 use bytes::{Bytes, BytesMut};
+use nbt::Blob;
 use thiserror::Error;
+use uuid::Uuid;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BlockPosition {
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+}
+
+#[derive(Debug, Clone)]
+pub struct Node; // TODO
+
+#[derive(Debug, Clone)]
+pub struct Slot;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -15,6 +30,11 @@ pub trait BytesExt {
     fn try_get_var_int(&mut self) -> Result<i32>;
     fn try_get_string(&mut self) -> Result<String>;
     fn try_get_bool(&mut self) -> Result<bool>;
+    fn try_get_position(&mut self) -> Result<BlockPosition>;
+    fn try_get_node(&mut self) -> Result<Node>;
+    fn try_get_uuid(&mut self) -> Result<Uuid>;
+    fn try_get_nbt(&mut self) -> Result<nbt::Blob>;
+    fn try_get_slot(&mut self) -> Result<Slot>;
 
     fn try_get_i8(&mut self) -> Result<i8>;
     fn try_get_i16(&mut self) -> Result<i16>;
@@ -34,6 +54,11 @@ pub trait BytesMutExt {
     fn put_var_int(&mut self, x: i32);
     fn put_string(&mut self, x: impl AsRef<str>);
     fn put_bool(&mut self, x: bool);
+    fn put_position(&mut self, x: BlockPosition);
+    fn put_node(&mut self, x: Node);
+    fn put_uuid(&mut self, x: Uuid);
+    fn put_nbt(&mut self, x: nbt::Blob);
+    fn put_slot(&mut self, x: Slot);
 }
 
 macro_rules! try_get_impl {
@@ -56,6 +81,26 @@ impl BytesExt for Bytes {
     }
 
     fn try_get_bool(&mut self) -> Result<bool> {
+        unimplemented!()
+    }
+
+    fn try_get_position(&mut self) -> Result<BlockPosition> {
+        unimplemented!()
+    }
+
+    fn try_get_node(&mut self) -> Result<Node> {
+        unimplemented!()
+    }
+
+    fn try_get_uuid(&mut self) -> Result<Uuid> {
+        unimplemented!()
+    }
+
+    fn try_get_nbt(&mut self) -> Result<Blob> {
+        unimplemented!()
+    }
+
+    fn try_get_slot(&mut self) -> Result<Slot> {
         unimplemented!()
     }
 
@@ -110,6 +155,26 @@ impl BytesMutExt for BytesMut {
     }
 
     fn put_bool(&mut self, _x: bool) {
+        unimplemented!()
+    }
+
+    fn put_position(&mut self, x: BlockPosition) {
+        unimplemented!()
+    }
+
+    fn put_node(&mut self, x: Node) {
+        unimplemented!()
+    }
+
+    fn put_uuid(&mut self, x: Uuid) {
+        unimplemented!()
+    }
+
+    fn put_nbt(&mut self, x: Blob) {
+        unimplemented!()
+    }
+
+    fn put_slot(&mut self, x: Slot) {
         unimplemented!()
     }
 }

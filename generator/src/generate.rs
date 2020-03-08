@@ -52,7 +52,7 @@ fn generate_struct(s: &Struct) -> TokenStream {
         let ty = tokenize_field_type(&actual_field_type(field));
 
         fields.push(quote! {
-            #fname: #ty
+            pub #fname: #ty
         });
 
         read_from.push(read_from_statement(field));
@@ -253,7 +253,7 @@ fn read_fn_ident(ty: &FieldType) -> TokenStream {
         FieldType::StructOrEnum { name } => {
             let ident = ident(name);
             quote! {
-                #ident::read_from(buf)?
+                #ident::<P>::read_from(buf)?
             }
         }
         FieldType::Array(_) => panic!("struct can't have array field"),
@@ -269,6 +269,11 @@ fn read_fn_ident(ty: &FieldType) -> TokenStream {
                 }
             }
         }
+        FieldType::Uuid => quote! { buf.try_get_uuid()? },
+        FieldType::Nbt => quote! { buf.try_get_nbt()? },
+        FieldType::Position => quote! { buf.try_get_position()? },
+        FieldType::Node => quote! { buf.try_get_node()? },
+        FieldType::Slot => quote! { buf.try_get_slot()? },
         FieldType::Identifier | FieldType::Chat | FieldType::String => {
             quote! { buf.try_get_string()? }
         }
@@ -326,6 +331,9 @@ fn write_fn_ident(field_name: &str, ty: &FieldType) -> TokenStream {
         }
         FieldType::Uuid => quote! { buf.put_uuid(#field_name) },
         FieldType::Nbt => quote! { buf.put_nbt(#field_name) },
+        FieldType::Position => quote! { buf.put_position(#field_name) },
+        FieldType::Node => quote! { buf.put_node(#field_name) },
+        FieldType::Slot => quote! { buf.put_slot(#field_name) },
         FieldType::Array(_) => panic!("struct can't have array field"),
         x => {
             let ident = ident(format!("put_{}", tokenize_field_type(x)));

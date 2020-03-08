@@ -9,7 +9,7 @@ pub use error::Error;
 pub use message::Message;
 pub use packet::{DynPacket, Packet, PacketReader};
 pub use provider::{Provider, RawChunkPalette, RawChunkSection};
-pub use types::{BytesExt, BytesMutExt};
+pub use types::{BlockPosition, BytesExt, BytesMutExt, Node, Slot};
 
 /// Protocol version.
 #[allow(non_snake_case)]

@@ -4,7 +4,9 @@ use crate::compile::{
     FieldFrom, FieldType, Packet, PacketDefinitions, PacketField, StructField, StructOrEnum,
     ValueFrom,
 };
-use crate::generate::{actual_field_type, ident, tokenize_field_type, write_to_statement};
+use crate::generate::{
+    actual_field_type, ident, read_from_statement, tokenize_field_type, write_to_statement,
+};
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::collections::HashMap;
@@ -14,6 +16,7 @@ pub fn generate_packets(defs: &PacketDefinitions) -> anyhow::Result<TokenStream>
     let serverbound = generate_packet_set(defs, &defs.serverbound)?;
 
     let res = quote! {
+        use crate::{Packet, PacketReader, DynPacket, BlockPosition, Node, Slot};
         #clientbound
         #serverbound
     };
@@ -57,6 +60,7 @@ fn generate_packet(defs: &PacketDefinitions, packet: &Packet) -> anyhow::Result<
     let def = generate_packet_def(packet, &analysis);
     let id = generate_packet_id_fn(packet);
     let write_to = generate_packet_write_to_fn(packet);
+    let read_from = generate_packet_read_from_fn(packet, &analysis);
 
     let name = ident(&packet.name);
 
@@ -66,12 +70,69 @@ fn generate_packet(defs: &PacketDefinitions, packet: &Packet) -> anyhow::Result<
         quote! { impl #name }
     };
 
+    let impl_packet_start = if analysis.needs_type_parameter {
+        quote! { impl <P> Packet for #name <P> where P: Provider }
+    } else {
+        quote! { impl Packet for #name }
+    };
+
+    let reader_type_parameter = if analysis.needs_type_parameter {
+        Some(quote! { <P: Provider> })
+    } else {
+        None
+    };
+
+    let reader_name = ident(format!("{}Reader", packet.name));
+    let reader_name = if analysis.needs_type_parameter {
+        quote! { #reader_name <P> }
+    } else {
+        quote! { #reader_name }
+    };
+
+    let reader_impl_start = if analysis.needs_type_parameter {
+        quote! { impl <P> PacketReader for #reader_name where P: Provider }
+    } else {
+        quote! { impl PacketReader for #reader_name }
+    };
+
+    let reader_fields = if analysis.needs_type_parameter {
+        quote! { (std::marker::PhantomData<P>) }
+    } else {
+        quote! {}
+    };
+
+    let reader_default_impl = if analysis.needs_type_parameter {
+        quote! {
+            impl <P> Default for #reader_name where P: Provider {
+                fn default() -> Self {
+                    Self(std::marker::PhantomData)
+                }
+            }
+        }
+    } else {
+        quote! {
+            impl Default for #reader_name {
+                fn default() -> Self {
+                    #reader_name
+                }
+            }
+        }
+    };
+
     let res = quote! {
         #def
 
-        #impl_start {
+        #impl_packet_start {
             #id
             #write_to
+        }
+
+        #[derive(Debug, Clone, Copy)]
+        pub struct #reader_name #reader_fields;
+        #reader_default_impl
+
+        #reader_impl_start {
+            #read_from
         }
     };
     Ok(res)
@@ -81,10 +142,14 @@ fn generate_packet_def(packet: &Packet, analysis: &PacketAnalysis) -> TokenStrea
     let fields: Vec<_> = packet
         .fields
         .iter()
-        .map(|field| {
+        .filter_map(|field| {
             let name = ident(&field.name);
             let ty = tokenize_field_type(&actual_field_type(field));
-            quote! { #name: #ty }
+            if field.value_from.is_some() {
+                None
+            } else {
+                Some(quote! { pub #name: #ty })
+            }
         })
         .collect();
 
@@ -148,7 +213,7 @@ fn generate_packet_write_to_fn(packet: &Packet) -> TokenStream {
                     false,
                 );
                 statements.push(quote! {
-                     #fname.iter().for_each(|x| #write_elem) ;
+                     #fname.into_iter().for_each(|x| #write_elem) ;
                 })
             }
             _ => statements.push(write_to_statement(&field.inner, true)),
@@ -156,10 +221,130 @@ fn generate_packet_write_to_fn(packet: &Packet) -> TokenStream {
     }
     let res = quote! {
         fn write_to(self, buf: &mut BytesMut) {
+            let version = VERSION;
             #(#statements)*
         }
     };
     res
+}
+
+fn generate_packet_read_from_fn(packet: &Packet, analysis: &PacketAnalysis) -> TokenStream {
+    let packet_name = ident(&packet.name);
+    let mut statements = vec![];
+    let fields: Vec<_> = packet
+        .fields
+        .iter()
+        .filter(|field| field.value_from.is_none())
+        .map(|field| {
+            let fname = ident(&field.name);
+            quote! { #fname }
+        })
+        .collect();
+
+    for field in &packet.fields {
+        let field_var = if let Some(ref value_from) = field.value_from {
+            match value_from {
+                ValueFrom::EnumRepr { field } => ident(format!("{}_repr", field)),
+                ValueFrom::ArrayLength { field } => ident(format!("{}_len", field)),
+            }
+        } else {
+            ident(&field.name)
+        };
+
+        match &field.ty {
+            FieldType::Array(of) => {
+                statements.push(generate_array_field_read_from(field, analysis, of))
+            }
+            FieldType::StructOrEnum { name } => {
+                statements.push(generate_struct_field_read_from(field, analysis, name))
+            }
+            _ => {
+                let field = StructField {
+                    name: field_var.to_string(),
+                    ty: field.ty.clone(),
+                    ty_from: field.ty_from.clone(),
+                };
+                statements.push(read_from_statement(&field))
+            }
+        }
+    }
+
+    let type_parameter = if analysis.needs_type_parameter {
+        quote! { ::<P> }
+    } else {
+        quote! {}
+    };
+
+    let res = quote! {
+        fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+            let version = VERSION;
+            #(#statements )*
+
+            let packet = #packet_name #type_parameter {
+                #(#fields ,)*
+            };
+            Ok(smallbox::smallbox!(packet))
+        }
+    };
+    res
+}
+
+fn generate_array_field_read_from(
+    field: &PacketField,
+    analysis: &PacketAnalysis,
+    of: &Box<FieldType>,
+) -> TokenStream {
+    let fname = ident(&field.name);
+    let read_elem = read_from_statement(&StructField {
+        name: String::from("elem"),
+        ty: *of.clone(),
+        ty_from: None,
+    });
+    if analysis.array_lengths.contains_key(field) {
+        // length field was already read: use it
+        let length_var = ident(format!("{}_len", field.name));
+
+        quote! {
+            let mut #fname = vec![];
+            for _ in 0..#length_var {
+                #read_elem
+                #fname.push(elem);
+            }
+        }
+    } else {
+        // infer length of array
+
+        quote! {
+            let mut #fname = vec![];
+            while buf.has_remaining() {
+                #read_elem
+                #fname.push(elem);
+            }
+        }
+    }
+}
+
+fn generate_struct_field_read_from(
+    field: &PacketField,
+    analysis: &PacketAnalysis,
+    name: &str,
+) -> TokenStream {
+    let fname = ident(&field.name);
+    let typename = ident(name);
+
+    if let Some(repr_field) = analysis.enum_reprs.get(field) {
+        let repr_field = *repr_field;
+
+        let repr_var = ident(format!("{}_repr", field.name));
+
+        quote! {
+            let #fname = #typename::<P>::read_from(buf, #repr_var as i64)?;
+        }
+    } else {
+        quote! {
+            let #fname = #typename::<P>::read_from(buf)?;
+        }
+    }
 }
 
 fn analyze_packet<'a>(

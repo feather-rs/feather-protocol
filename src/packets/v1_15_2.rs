@@ -133,8 +133,8 @@ where
 }
 #[derive(Debug, Clone)]
 pub struct Statistic<P: Provider> {
-    category_id: i32,
-    statistic_id: i32,
+    pub category_id: i32,
+    pub statistic_id: i32,
     _phantom: std::marker::PhantomData<P>,
 }
 impl<P> Statistic<P>
@@ -537,9 +537,9 @@ where
 }
 #[derive(Debug, Clone)]
 pub struct MultiBlockChangeRecord<P: Provider> {
-    horizontal_position: u8,
-    vertical_position: u8,
-    block: P::Block,
+    pub horizontal_position: u8,
+    pub vertical_position: u8,
+    pub block: P::Block,
     _phantom: std::marker::PhantomData<P>,
 }
 impl<P> MultiBlockChangeRecord<P>
@@ -572,8 +572,8 @@ where
 }
 #[derive(Debug, Clone)]
 pub struct TabCompleteMatch<P: Provider> {
-    name: String,
-    tooltip: Option<String>,
+    pub name: String,
+    pub tooltip: Option<String>,
     _phantom: std::marker::PhantomData<P>,
 }
 impl<P> TabCompleteMatch<P>
@@ -610,9 +610,9 @@ where
 }
 #[derive(Debug, Clone)]
 pub struct ExplosionRecord<P: Provider> {
-    x: i8,
-    y: i8,
-    z: i8,
+    pub x: i8,
+    pub y: i8,
+    pub z: i8,
     _phantom: std::marker::PhantomData<P>,
 }
 impl<P> ExplosionRecord<P>
@@ -784,22 +784,23 @@ where
         }
     }
 }
+use crate::{BlockPosition, DynPacket, Node, Packet, PacketReader, Slot};
 #[derive(Debug, Clone)]
 pub struct SpawnObject {
-    entity: i32,
-    uuid: uuid::Uuid,
-    ty: i32,
-    x: f64,
-    y: f64,
-    z: f64,
-    pitch: u8,
-    yaw: u8,
-    data: i32,
-    dx: i16,
-    dy: i16,
-    dz: i16,
+    pub entity: i32,
+    pub uuid: uuid::Uuid,
+    pub ty: i32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub pitch: u8,
+    pub yaw: u8,
+    pub data: i32,
+    pub dx: i16,
+    pub dy: i16,
+    pub dz: i16,
 }
-impl SpawnObject {
+impl Packet for SpawnObject {
     fn id(&self) -> u32 {
         0u32
     }
@@ -807,6 +808,7 @@ impl SpawnObject {
         "SpawnObject"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let uuid = self.uuid;
@@ -833,15 +835,54 @@ impl SpawnObject {
         buf.put_i16(dz as i16);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct SpawnObjectReader;
+impl Default for SpawnObjectReader {
+    fn default() -> Self {
+        SpawnObjectReader
+    }
+}
+impl PacketReader for SpawnObjectReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let entity = buf.try_get_i32()?;
+        let uuid = buf.try_get_uuid()?;
+        let ty = buf.try_get_i32()?;
+        let x = buf.try_get_f64()?;
+        let y = buf.try_get_f64()?;
+        let z = buf.try_get_f64()?;
+        let pitch = buf.try_get_u8()?;
+        let yaw = buf.try_get_u8()?;
+        let data = buf.try_get_i32()?;
+        let dx = buf.try_get_i16()?;
+        let dy = buf.try_get_i16()?;
+        let dz = buf.try_get_i16()?;
+        let packet = SpawnObject {
+            entity,
+            uuid,
+            ty,
+            x,
+            y,
+            z,
+            pitch,
+            yaw,
+            data,
+            dx,
+            dy,
+            dz,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct SpawnExperienceOrb {
-    entity: i32,
-    x: f64,
-    y: f64,
-    z: f64,
-    count: i16,
+    pub entity: i32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub count: i16,
 }
-impl SpawnExperienceOrb {
+impl Packet for SpawnExperienceOrb {
     fn id(&self) -> u32 {
         1u32
     }
@@ -849,6 +890,7 @@ impl SpawnExperienceOrb {
         "SpawnExperienceOrb"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let x = self.x;
@@ -861,12 +903,37 @@ impl SpawnExperienceOrb {
         buf.put_i16(count as i16);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct SpawnExperienceOrbReader;
+impl Default for SpawnExperienceOrbReader {
+    fn default() -> Self {
+        SpawnExperienceOrbReader
+    }
+}
+impl PacketReader for SpawnExperienceOrbReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let entity = buf.try_get_i32()?;
+        let x = buf.try_get_f64()?;
+        let y = buf.try_get_f64()?;
+        let z = buf.try_get_f64()?;
+        let count = buf.try_get_i16()?;
+        let packet = SpawnExperienceOrb {
+            entity,
+            x,
+            y,
+            z,
+            count,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct SpawnGlobalEntity<P: Provider> {
-    entity: i32,
-    ty: SpawnGlobalEntityType<P>,
+    pub entity: i32,
+    pub ty: SpawnGlobalEntityType<P>,
 }
-impl<P> SpawnGlobalEntity<P>
+impl<P> Packet for SpawnGlobalEntity<P>
 where
     P: Provider,
 {
@@ -877,6 +944,7 @@ where
         "SpawnGlobalEntity"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let ty = self.ty;
@@ -884,22 +952,45 @@ where
         buf.put_u8(ty as u8);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct SpawnGlobalEntityReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for SpawnGlobalEntityReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for SpawnGlobalEntityReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let entity = buf.try_get_i32()?;
+        let ty = buf.try_get_u8()?;
+        let ty = SpawnGlobalEntityType::read_from(buf, ty as i64)?;
+        let packet = SpawnGlobalEntity::<P> { entity, ty };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct SpawnMob {
-    entity: i32,
-    uuid: uuid::Uuid,
-    ty: i32,
-    x: f64,
-    y: f64,
-    z: f64,
-    yaw: u8,
-    pitch: u8,
-    head_pitch: u8,
-    dx: i16,
-    dy: i16,
-    dz: i16,
+    pub entity: i32,
+    pub uuid: uuid::Uuid,
+    pub ty: i32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub yaw: u8,
+    pub pitch: u8,
+    pub head_pitch: u8,
+    pub dx: i16,
+    pub dy: i16,
+    pub dz: i16,
 }
-impl SpawnMob {
+impl Packet for SpawnMob {
     fn id(&self) -> u32 {
         3u32
     }
@@ -907,6 +998,7 @@ impl SpawnMob {
         "SpawnMob"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let uuid = self.uuid;
@@ -933,15 +1025,54 @@ impl SpawnMob {
         buf.put_i16(dz as i16);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct SpawnMobReader;
+impl Default for SpawnMobReader {
+    fn default() -> Self {
+        SpawnMobReader
+    }
+}
+impl PacketReader for SpawnMobReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let entity = buf.try_get_i32()?;
+        let uuid = buf.try_get_uuid()?;
+        let ty = buf.try_get_i32()?;
+        let x = buf.try_get_f64()?;
+        let y = buf.try_get_f64()?;
+        let z = buf.try_get_f64()?;
+        let yaw = buf.try_get_u8()?;
+        let pitch = buf.try_get_u8()?;
+        let head_pitch = buf.try_get_u8()?;
+        let dx = buf.try_get_i16()?;
+        let dy = buf.try_get_i16()?;
+        let dz = buf.try_get_i16()?;
+        let packet = SpawnMob {
+            entity,
+            uuid,
+            ty,
+            x,
+            y,
+            z,
+            yaw,
+            pitch,
+            head_pitch,
+            dx,
+            dy,
+            dz,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct SpawnPainting<P: Provider> {
-    entity: i32,
-    uuid: uuid::Uuid,
-    motive: i32,
-    position: BlockPosition,
-    direction: SpawnPaintingDirection<P>,
+    pub entity: i32,
+    pub uuid: uuid::Uuid,
+    pub motive: i32,
+    pub position: BlockPosition,
+    pub direction: SpawnPaintingDirection<P>,
 }
-impl<P> SpawnPainting<P>
+impl<P> Packet for SpawnPainting<P>
 where
     P: Provider,
 {
@@ -952,6 +1083,7 @@ where
         "SpawnPainting"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let uuid = self.uuid;
@@ -959,23 +1091,55 @@ where
         let motive = self.motive;
         buf.put_i32(motive as i32);
         let position = self.position;
-        buf.put_BlockPosition(position as BlockPosition);
+        buf.put_position(position);
         let direction = self.direction;
         let direction = direction.repr();
         buf.put_u8(direction as u8);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct SpawnPaintingReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for SpawnPaintingReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for SpawnPaintingReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let entity = buf.try_get_i32()?;
+        let uuid = buf.try_get_uuid()?;
+        let motive = buf.try_get_i32()?;
+        let position = buf.try_get_position()?;
+        let direction = buf.try_get_u8()?;
+        let direction = SpawnPaintingDirection::read_from(buf, direction as i64)?;
+        let packet = SpawnPainting::<P> {
+            entity,
+            uuid,
+            motive,
+            position,
+            direction,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct SpawnPlayer {
-    entity: i32,
-    uuid: uuid::Uuid,
-    x: f64,
-    y: f64,
-    z: f64,
-    yaw: u8,
-    pitch: u8,
+    pub entity: i32,
+    pub uuid: uuid::Uuid,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub yaw: u8,
+    pub pitch: u8,
 }
-impl SpawnPlayer {
+impl Packet for SpawnPlayer {
     fn id(&self) -> u32 {
         5u32
     }
@@ -983,6 +1147,7 @@ impl SpawnPlayer {
         "SpawnPlayer"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let uuid = self.uuid;
@@ -999,12 +1164,41 @@ impl SpawnPlayer {
         buf.put_u8(pitch as u8);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct SpawnPlayerReader;
+impl Default for SpawnPlayerReader {
+    fn default() -> Self {
+        SpawnPlayerReader
+    }
+}
+impl PacketReader for SpawnPlayerReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let entity = buf.try_get_i32()?;
+        let uuid = buf.try_get_uuid()?;
+        let x = buf.try_get_f64()?;
+        let y = buf.try_get_f64()?;
+        let z = buf.try_get_f64()?;
+        let yaw = buf.try_get_u8()?;
+        let pitch = buf.try_get_u8()?;
+        let packet = SpawnPlayer {
+            entity,
+            uuid,
+            x,
+            y,
+            z,
+            yaw,
+            pitch,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct EntityAnimation<P: Provider> {
-    entity: i32,
-    animation: EntityAnimationType<P>,
+    pub entity: i32,
+    pub animation: EntityAnimationType<P>,
 }
-impl<P> EntityAnimation<P>
+impl<P> Packet for EntityAnimation<P>
 where
     P: Provider,
 {
@@ -1015,6 +1209,7 @@ where
         "EntityAnimation"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let animation = self.animation;
@@ -1022,13 +1217,35 @@ where
         buf.put_u8(animation as u8);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct EntityAnimationReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for EntityAnimationReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for EntityAnimationReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let entity = buf.try_get_i32()?;
+        let animation = buf.try_get_u8()?;
+        let animation = EntityAnimationType::read_from(buf, animation as i64)?;
+        let packet = EntityAnimation::<P> { entity, animation };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct Statistics<P: Provider> {
-    count: i32,
-    statistics: Vec<Statistic<P>>,
-    value: i32,
+    pub statistics: Vec<Statistic<P>>,
+    pub value: i32,
 }
-impl<P> Statistics<P>
+impl<P> Packet for Statistics<P>
 where
     P: Provider,
 {
@@ -1039,22 +1256,50 @@ where
         "Statistics"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let count = self.statistics.len() as i32;
         buf.put_i32(count as i32);
         let statistics = self.statistics;
-        statistics.iter().for_each(|x| x.write_to(buf));
+        statistics.into_iter().for_each(|x| x.write_to(buf));
         let value = self.value;
         buf.put_i32(value as i32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct StatisticsReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for StatisticsReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for StatisticsReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let statistics_len = buf.try_get_i32()?;
+        let mut statistics = vec![];
+        for _ in 0..statistics_len {
+            let elem = Statistic::<P>::read_from(buf)?;
+            statistics.push(elem);
+        }
+        let value = buf.try_get_i32()?;
+        let packet = Statistics::<P> { statistics, value };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct AcknowledgePlayerDigging<P: Provider> {
-    position: BlockPosition,
-    block: P::Block,
-    status: AcknowledgePlayerDiggingStatus<P>,
-    successful: bool,
+    pub position: BlockPosition,
+    pub block: P::Block,
+    pub status: AcknowledgePlayerDiggingStatus<P>,
+    pub successful: bool,
 }
-impl<P> AcknowledgePlayerDigging<P>
+impl<P> Packet for AcknowledgePlayerDigging<P>
 where
     P: Provider,
 {
@@ -1065,8 +1310,9 @@ where
         "AcknowledgePlayerDigging"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let position = self.position;
-        buf.put_BlockPosition(position as BlockPosition);
+        buf.put_position(position);
         let block = self.block;
         let block = P::block_id(block, version);
         buf.put_i32(block as i32);
@@ -1077,13 +1323,44 @@ where
         buf.put_bool(successful as bool);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct AcknowledgePlayerDiggingReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for AcknowledgePlayerDiggingReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for AcknowledgePlayerDiggingReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let position = buf.try_get_position()?;
+        let block = buf.try_get_i32()?;
+        let block = P::block_from_id(block as u16, version)?;
+        let status = buf.try_get_i32()?;
+        let status = AcknowledgePlayerDiggingStatus::read_from(buf, status as i64)?;
+        let successful = buf.try_get_bool()?;
+        let packet = AcknowledgePlayerDigging::<P> {
+            position,
+            block,
+            status,
+            successful,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct BlockBreakAnimation {
-    breaker: i32,
-    position: BlockPosition,
-    destroy_stage: u8,
+    pub breaker: i32,
+    pub position: BlockPosition,
+    pub destroy_stage: u8,
 }
-impl BlockBreakAnimation {
+impl Packet for BlockBreakAnimation {
     fn id(&self) -> u32 {
         9u32
     }
@@ -1091,21 +1368,43 @@ impl BlockBreakAnimation {
         "BlockBreakAnimation"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let breaker = self.breaker;
         buf.put_i32(breaker as i32);
         let position = self.position;
-        buf.put_BlockPosition(position as BlockPosition);
+        buf.put_position(position);
         let destroy_stage = self.destroy_stage;
         buf.put_u8(destroy_stage as u8);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct BlockBreakAnimationReader;
+impl Default for BlockBreakAnimationReader {
+    fn default() -> Self {
+        BlockBreakAnimationReader
+    }
+}
+impl PacketReader for BlockBreakAnimationReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let breaker = buf.try_get_i32()?;
+        let position = buf.try_get_position()?;
+        let destroy_stage = buf.try_get_u8()?;
+        let packet = BlockBreakAnimation {
+            breaker,
+            position,
+            destroy_stage,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct UpdateBlockEntity<P: Provider> {
-    os: BlockPosition,
-    action: UpdateBlockEntityAction<P>,
-    data: nbt::Blob,
+    pub os: BlockPosition,
+    pub action: UpdateBlockEntityAction<P>,
+    pub data: nbt::Blob,
 }
-impl<P> UpdateBlockEntity<P>
+impl<P> Packet for UpdateBlockEntity<P>
 where
     P: Provider,
 {
@@ -1116,8 +1415,9 @@ where
         "UpdateBlockEntity"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let os = self.os;
-        buf.put_BlockPosition(os as BlockPosition);
+        buf.put_position(os);
         let action = self.action;
         let action = action.repr();
         buf.put_u8(action as u8);
@@ -1125,14 +1425,38 @@ where
         buf.put_nbt(data);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct UpdateBlockEntityReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for UpdateBlockEntityReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for UpdateBlockEntityReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let os = buf.try_get_position()?;
+        let action = buf.try_get_u8()?;
+        let action = UpdateBlockEntityAction::read_from(buf, action as i64)?;
+        let data = buf.try_get_nbt()?;
+        let packet = UpdateBlockEntity::<P> { os, action, data };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct BlockAction<P: Provider> {
-    position: BlockPosition,
-    action_id: u8,
-    action_param: u8,
-    block_type: P::Block,
+    pub position: BlockPosition,
+    pub action_id: u8,
+    pub action_param: u8,
+    pub block_type: P::Block,
 }
-impl<P> BlockAction<P>
+impl<P> Packet for BlockAction<P>
 where
     P: Provider,
 {
@@ -1143,8 +1467,9 @@ where
         "BlockAction"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let position = self.position;
-        buf.put_BlockPosition(position as BlockPosition);
+        buf.put_position(position);
         let action_id = self.action_id;
         buf.put_u8(action_id as u8);
         let action_param = self.action_param;
@@ -1154,12 +1479,42 @@ where
         buf.put_i32(block_type as i32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct BlockActionReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for BlockActionReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for BlockActionReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let position = buf.try_get_position()?;
+        let action_id = buf.try_get_u8()?;
+        let action_param = buf.try_get_u8()?;
+        let block_type = buf.try_get_i32()?;
+        let block_type = P::block_from_ty(block_type as u16, version)?;
+        let packet = BlockAction::<P> {
+            position,
+            action_id,
+            action_param,
+            block_type,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct BlockChange<P: Provider> {
-    position: BlockPosition,
-    block: P::Block,
+    pub position: BlockPosition,
+    pub block: P::Block,
 }
-impl<P> BlockChange<P>
+impl<P> Packet for BlockChange<P>
 where
     P: Provider,
 {
@@ -1170,20 +1525,43 @@ where
         "BlockChange"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let position = self.position;
-        buf.put_BlockPosition(position as BlockPosition);
+        buf.put_position(position);
         let block = self.block;
         let block = P::block_id(block, version);
         buf.put_i32(block as i32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct BlockChangeReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for BlockChangeReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for BlockChangeReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let position = buf.try_get_position()?;
+        let block = buf.try_get_i32()?;
+        let block = P::block_from_id(block as u16, version)?;
+        let packet = BlockChange::<P> { position, block };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct BossBar<P: Provider> {
-    uuid: uuid::Uuid,
-    action: i32,
-    data: BossBarData<P>,
+    pub uuid: uuid::Uuid,
+    pub data: BossBarData<P>,
 }
-impl<P> BossBar<P>
+impl<P> Packet for BossBar<P>
 where
     P: Provider,
 {
@@ -1194,6 +1572,7 @@ where
         "BossBar"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let uuid = self.uuid;
         buf.put_uuid(uuid);
         let action = self.data.repr() as i32;
@@ -1202,12 +1581,35 @@ where
         data.write_to(buf);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct BossBarReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for BossBarReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for BossBarReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let uuid = buf.try_get_uuid()?;
+        let data_repr = buf.try_get_i32()?;
+        let data = BossBarData::<P>::read_from(buf, data_repr as i64)?;
+        let packet = BossBar::<P> { uuid, data };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct ServerDifficulty {
-    difficulty: u8,
-    difficulty_locked: bool,
+    pub difficulty: u8,
+    pub difficulty_locked: bool,
 }
-impl ServerDifficulty {
+impl Packet for ServerDifficulty {
     fn id(&self) -> u32 {
         14u32
     }
@@ -1215,18 +1617,38 @@ impl ServerDifficulty {
         "ServerDifficulty"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let difficulty = self.difficulty;
         buf.put_u8(difficulty as u8);
         let difficulty_locked = self.difficulty_locked;
         buf.put_bool(difficulty_locked as bool);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct ServerDifficultyReader;
+impl Default for ServerDifficultyReader {
+    fn default() -> Self {
+        ServerDifficultyReader
+    }
+}
+impl PacketReader for ServerDifficultyReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let difficulty = buf.try_get_u8()?;
+        let difficulty_locked = buf.try_get_bool()?;
+        let packet = ServerDifficulty {
+            difficulty,
+            difficulty_locked,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct ChatMessage<P: Provider> {
-    data: String,
-    position: ChatMessagePosition<P>,
+    pub data: String,
+    pub position: ChatMessagePosition<P>,
 }
-impl<P> ChatMessage<P>
+impl<P> Packet for ChatMessage<P>
 where
     P: Provider,
 {
@@ -1237,6 +1659,7 @@ where
         "ChatMessage"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let data = self.data;
         buf.put_string(data);
         let position = self.position;
@@ -1244,14 +1667,36 @@ where
         buf.put_u8(position as u8);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct ChatMessageReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for ChatMessageReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for ChatMessageReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let data = buf.try_get_string()?;
+        let position = buf.try_get_u8()?;
+        let position = ChatMessagePosition::read_from(buf, position as i64)?;
+        let packet = ChatMessage::<P> { data, position };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct MultiBlockChange<P: Provider> {
-    chunk_x: i32,
-    chunk_z: i32,
-    count: i32,
-    records: Vec<MultiBlockChangeRecord<P>>,
+    pub chunk_x: i32,
+    pub chunk_z: i32,
+    pub records: Vec<MultiBlockChangeRecord<P>>,
 }
-impl<P> MultiBlockChange<P>
+impl<P> Packet for MultiBlockChange<P>
 where
     P: Provider,
 {
@@ -1262,6 +1707,7 @@ where
         "MultiBlockChange"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let chunk_x = self.chunk_x;
         buf.put_i32(chunk_x as i32);
         let chunk_z = self.chunk_z;
@@ -1269,18 +1715,49 @@ where
         let count = self.records.len() as i32;
         buf.put_i32(count as i32);
         let records = self.records;
-        records.iter().for_each(|x| x.write_to(buf));
+        records.into_iter().for_each(|x| x.write_to(buf));
+    }
+}
+#[derive(Debug, Clone, Copy)]
+pub struct MultiBlockChangeReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for MultiBlockChangeReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for MultiBlockChangeReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let chunk_x = buf.try_get_i32()?;
+        let chunk_z = buf.try_get_i32()?;
+        let records_len = buf.try_get_i32()?;
+        let mut records = vec![];
+        for _ in 0..records_len {
+            let elem = MultiBlockChangeRecord::<P>::read_from(buf)?;
+            records.push(elem);
+        }
+        let packet = MultiBlockChange::<P> {
+            chunk_x,
+            chunk_z,
+            records,
+        };
+        Ok(smallbox::smallbox!(packet))
     }
 }
 #[derive(Debug, Clone)]
 pub struct TabComplete<P: Provider> {
-    transaction_id: i32,
-    start: i32,
-    length: i32,
-    count: i32,
-    matches: Vec<TabCompleteMatch<P>>,
+    pub transaction_id: i32,
+    pub start: i32,
+    pub length: i32,
+    pub matches: Vec<TabCompleteMatch<P>>,
 }
-impl<P> TabComplete<P>
+impl<P> Packet for TabComplete<P>
 where
     P: Provider,
 {
@@ -1291,6 +1768,7 @@ where
         "TabComplete"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let transaction_id = self.transaction_id;
         buf.put_i32(transaction_id as i32);
         let start = self.start;
@@ -1300,16 +1778,49 @@ where
         let count = self.matches.len() as i32;
         buf.put_i32(count as i32);
         let matches = self.matches;
-        matches.iter().for_each(|x| x.write_to(buf));
+        matches.into_iter().for_each(|x| x.write_to(buf));
+    }
+}
+#[derive(Debug, Clone, Copy)]
+pub struct TabCompleteReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for TabCompleteReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for TabCompleteReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let transaction_id = buf.try_get_i32()?;
+        let start = buf.try_get_i32()?;
+        let length = buf.try_get_i32()?;
+        let matches_len = buf.try_get_i32()?;
+        let mut matches = vec![];
+        for _ in 0..matches_len {
+            let elem = TabCompleteMatch::<P>::read_from(buf)?;
+            matches.push(elem);
+        }
+        let packet = TabComplete::<P> {
+            transaction_id,
+            start,
+            length,
+            matches,
+        };
+        Ok(smallbox::smallbox!(packet))
     }
 }
 #[derive(Debug, Clone)]
 pub struct DeclareCommands {
-    count: i32,
-    nodes: Vec<Node>,
-    root_index: i32,
+    pub nodes: Vec<Node>,
+    pub root_index: i32,
 }
-impl DeclareCommands {
+impl Packet for DeclareCommands {
     fn id(&self) -> u32 {
         18u32
     }
@@ -1317,21 +1828,43 @@ impl DeclareCommands {
         "DeclareCommands"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let count = self.nodes.len() as i32;
         buf.put_i32(count as i32);
         let nodes = self.nodes;
-        nodes.iter().for_each(|x| buf.put_Node(x as Node));
+        nodes.into_iter().for_each(|x| buf.put_node(x));
         let root_index = self.root_index;
         buf.put_i32(root_index as i32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct DeclareCommandsReader;
+impl Default for DeclareCommandsReader {
+    fn default() -> Self {
+        DeclareCommandsReader
+    }
+}
+impl PacketReader for DeclareCommandsReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let nodes_len = buf.try_get_i32()?;
+        let mut nodes = vec![];
+        for _ in 0..nodes_len {
+            let elem = buf.try_get_node()?;
+            nodes.push(elem);
+        }
+        let root_index = buf.try_get_i32()?;
+        let packet = DeclareCommands { nodes, root_index };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct WindowConfirmation {
-    window_id: u8,
-    action_number: i16,
-    accepted: bool,
+    pub window_id: u8,
+    pub action_number: i16,
+    pub accepted: bool,
 }
-impl WindowConfirmation {
+impl Packet for WindowConfirmation {
     fn id(&self) -> u32 {
         19u32
     }
@@ -1339,6 +1872,7 @@ impl WindowConfirmation {
         "WindowConfirmation"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
         let action_number = self.action_number;
@@ -1347,11 +1881,32 @@ impl WindowConfirmation {
         buf.put_bool(accepted as bool);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct WindowConfirmationReader;
+impl Default for WindowConfirmationReader {
+    fn default() -> Self {
+        WindowConfirmationReader
+    }
+}
+impl PacketReader for WindowConfirmationReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let window_id = buf.try_get_u8()?;
+        let action_number = buf.try_get_i16()?;
+        let accepted = buf.try_get_bool()?;
+        let packet = WindowConfirmation {
+            window_id,
+            action_number,
+            accepted,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct CloseWindow {
-    window_id: u8,
+    pub window_id: u8,
 }
-impl CloseWindow {
+impl Packet for CloseWindow {
     fn id(&self) -> u32 {
         20u32
     }
@@ -1359,17 +1914,32 @@ impl CloseWindow {
         "CloseWindow"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct CloseWindowReader;
+impl Default for CloseWindowReader {
+    fn default() -> Self {
+        CloseWindowReader
+    }
+}
+impl PacketReader for CloseWindowReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let window_id = buf.try_get_u8()?;
+        let packet = CloseWindow { window_id };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct WindowItems {
-    window_id: u8,
-    count: i16,
-    slots: Vec<Slot>,
+    pub window_id: u8,
+    pub slots: Vec<Slot>,
 }
-impl WindowItems {
+impl Packet for WindowItems {
     fn id(&self) -> u32 {
         21u32
     }
@@ -1377,21 +1947,43 @@ impl WindowItems {
         "WindowItems"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
         let count = self.slots.len() as i16;
         buf.put_i16(count as i16);
         let slots = self.slots;
-        slots.iter().for_each(|x| buf.put_Slot(x as Slot));
+        slots.into_iter().for_each(|x| buf.put_slot(x));
+    }
+}
+#[derive(Debug, Clone, Copy)]
+pub struct WindowItemsReader;
+impl Default for WindowItemsReader {
+    fn default() -> Self {
+        WindowItemsReader
+    }
+}
+impl PacketReader for WindowItemsReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let window_id = buf.try_get_u8()?;
+        let slots_len = buf.try_get_i16()?;
+        let mut slots = vec![];
+        for _ in 0..slots_len {
+            let elem = buf.try_get_slot()?;
+            slots.push(elem);
+        }
+        let packet = WindowItems { window_id, slots };
+        Ok(smallbox::smallbox!(packet))
     }
 }
 #[derive(Debug, Clone)]
 pub struct WindowProperty {
-    window_id: u8,
-    property: i16,
-    value: i16,
+    pub window_id: u8,
+    pub property: i16,
+    pub value: i16,
 }
-impl WindowProperty {
+impl Packet for WindowProperty {
     fn id(&self) -> u32 {
         22u32
     }
@@ -1399,6 +1991,7 @@ impl WindowProperty {
         "WindowProperty"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
         let property = self.property;
@@ -1407,13 +2000,34 @@ impl WindowProperty {
         buf.put_i16(value as i16);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct WindowPropertyReader;
+impl Default for WindowPropertyReader {
+    fn default() -> Self {
+        WindowPropertyReader
+    }
+}
+impl PacketReader for WindowPropertyReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let window_id = buf.try_get_u8()?;
+        let property = buf.try_get_i16()?;
+        let value = buf.try_get_i16()?;
+        let packet = WindowProperty {
+            window_id,
+            property,
+            value,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct SetSlot {
-    window_id: u8,
-    slot_index: i16,
-    slot: Slot,
+    pub window_id: u8,
+    pub slot_index: i16,
+    pub slot: Slot,
 }
-impl SetSlot {
+impl Packet for SetSlot {
     fn id(&self) -> u32 {
         23u32
     }
@@ -1421,20 +2035,42 @@ impl SetSlot {
         "SetSlot"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
         let slot_index = self.slot_index;
         buf.put_i16(slot_index as i16);
         let slot = self.slot;
-        buf.put_Slot(slot as Slot);
+        buf.put_slot(slot);
+    }
+}
+#[derive(Debug, Clone, Copy)]
+pub struct SetSlotReader;
+impl Default for SetSlotReader {
+    fn default() -> Self {
+        SetSlotReader
+    }
+}
+impl PacketReader for SetSlotReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let window_id = buf.try_get_u8()?;
+        let slot_index = buf.try_get_i16()?;
+        let slot = buf.try_get_slot()?;
+        let packet = SetSlot {
+            window_id,
+            slot_index,
+            slot,
+        };
+        Ok(smallbox::smallbox!(packet))
     }
 }
 #[derive(Debug, Clone)]
 pub struct SetCooldown<P: Provider> {
-    item: P::Item,
-    cooldown_ticks: i32,
+    pub item: P::Item,
+    pub cooldown_ticks: i32,
 }
-impl<P> SetCooldown<P>
+impl<P> Packet for SetCooldown<P>
 where
     P: Provider,
 {
@@ -1445,6 +2081,7 @@ where
         "SetCooldown"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let item = self.item;
         let item = P::item_id(item, version);
         buf.put_i32(item as i32);
@@ -1452,12 +2089,38 @@ where
         buf.put_i32(cooldown_ticks as i32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct SetCooldownReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for SetCooldownReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for SetCooldownReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let item = buf.try_get_i32()?;
+        let item = P::item_from_id(item as u16, version)?;
+        let cooldown_ticks = buf.try_get_i32()?;
+        let packet = SetCooldown::<P> {
+            item,
+            cooldown_ticks,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct PluginMessage {
-    channel: String,
-    data: Vec<i8>,
+    pub channel: String,
+    pub data: Vec<i8>,
 }
-impl PluginMessage {
+impl Packet for PluginMessage {
     fn id(&self) -> u32 {
         25u32
     }
@@ -1465,23 +2128,44 @@ impl PluginMessage {
         "PluginMessage"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let channel = self.channel;
         buf.put_string(channel);
         let data = self.data;
-        data.iter().for_each(|x| buf.put_i8(x as i8));
+        data.into_iter().for_each(|x| buf.put_i8(x as i8));
+    }
+}
+#[derive(Debug, Clone, Copy)]
+pub struct PluginMessageReader;
+impl Default for PluginMessageReader {
+    fn default() -> Self {
+        PluginMessageReader
+    }
+}
+impl PacketReader for PluginMessageReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let channel = buf.try_get_string()?;
+        let mut data = vec![];
+        while buf.has_remaining() {
+            let elem = buf.try_get_i8()?;
+            data.push(elem);
+        }
+        let packet = PluginMessage { channel, data };
+        Ok(smallbox::smallbox!(packet))
     }
 }
 #[derive(Debug, Clone)]
 pub struct NamedSoundEffect {
-    name: String,
-    category: i32,
-    posx: i32,
-    posy: i32,
-    posz: i32,
-    volume: f32,
-    pitch: f32,
+    pub name: String,
+    pub category: i32,
+    pub posx: i32,
+    pub posy: i32,
+    pub posz: i32,
+    pub volume: f32,
+    pub pitch: f32,
 }
-impl NamedSoundEffect {
+impl Packet for NamedSoundEffect {
     fn id(&self) -> u32 {
         26u32
     }
@@ -1489,6 +2173,7 @@ impl NamedSoundEffect {
         "NamedSoundEffect"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let name = self.name;
         buf.put_string(name);
         let category = self.category;
@@ -1505,11 +2190,40 @@ impl NamedSoundEffect {
         buf.put_f32(pitch as f32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct NamedSoundEffectReader;
+impl Default for NamedSoundEffectReader {
+    fn default() -> Self {
+        NamedSoundEffectReader
+    }
+}
+impl PacketReader for NamedSoundEffectReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let name = buf.try_get_string()?;
+        let category = buf.try_get_i32()?;
+        let posx = buf.try_get_i32()?;
+        let posy = buf.try_get_i32()?;
+        let posz = buf.try_get_i32()?;
+        let volume = buf.try_get_f32()?;
+        let pitch = buf.try_get_f32()?;
+        let packet = NamedSoundEffect {
+            name,
+            category,
+            posx,
+            posy,
+            posz,
+            volume,
+            pitch,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct Disconnect {
-    reason: String,
+    pub reason: String,
 }
-impl Disconnect {
+impl Packet for Disconnect {
     fn id(&self) -> u32 {
         27u32
     }
@@ -1517,16 +2231,32 @@ impl Disconnect {
         "Disconnect"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let reason = self.reason;
         buf.put_string(reason);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct DisconnectReader;
+impl Default for DisconnectReader {
+    fn default() -> Self {
+        DisconnectReader
+    }
+}
+impl PacketReader for DisconnectReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let reason = buf.try_get_string()?;
+        let packet = Disconnect { reason };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct EntityStatus {
-    entity: i32,
-    status: i8,
+    pub entity: i32,
+    pub status: i8,
 }
-impl EntityStatus {
+impl Packet for EntityStatus {
     fn id(&self) -> u32 {
         28u32
     }
@@ -1534,25 +2264,41 @@ impl EntityStatus {
         "EntityStatus"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let status = self.status;
         buf.put_i8(status as i8);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct EntityStatusReader;
+impl Default for EntityStatusReader {
+    fn default() -> Self {
+        EntityStatusReader
+    }
+}
+impl PacketReader for EntityStatusReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let entity = buf.try_get_i32()?;
+        let status = buf.try_get_i8()?;
+        let packet = EntityStatus { entity, status };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct Explosion<P: Provider> {
-    x: f32,
-    y: f32,
-    z: f32,
-    strength: f32,
-    record_count: i32,
-    records: Vec<ExplosionRecord<P>>,
-    player_dx: f32,
-    player_dy: f32,
-    player_dz: f32,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub strength: f32,
+    pub records: Vec<ExplosionRecord<P>>,
+    pub player_dx: f32,
+    pub player_dy: f32,
+    pub player_dz: f32,
 }
-impl<P> Explosion<P>
+impl<P> Packet for Explosion<P>
 where
     P: Provider,
 {
@@ -1563,6 +2309,7 @@ where
         "Explosion"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let x = self.x;
         buf.put_f32(x as f32);
         let y = self.y;
@@ -1574,7 +2321,7 @@ where
         let record_count = self.records.len() as i32;
         buf.put_i32(record_count as i32);
         let records = self.records;
-        records.iter().for_each(|x| x.write_to(buf));
+        records.into_iter().for_each(|x| x.write_to(buf));
         let player_dx = self.player_dx;
         buf.put_f32(player_dx as f32);
         let player_dy = self.player_dy;
@@ -1583,12 +2330,54 @@ where
         buf.put_f32(player_dz as f32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct ExplosionReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for ExplosionReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for ExplosionReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let x = buf.try_get_f32()?;
+        let y = buf.try_get_f32()?;
+        let z = buf.try_get_f32()?;
+        let strength = buf.try_get_f32()?;
+        let records_len = buf.try_get_i32()?;
+        let mut records = vec![];
+        for _ in 0..records_len {
+            let elem = ExplosionRecord::<P>::read_from(buf)?;
+            records.push(elem);
+        }
+        let player_dx = buf.try_get_f32()?;
+        let player_dy = buf.try_get_f32()?;
+        let player_dz = buf.try_get_f32()?;
+        let packet = Explosion::<P> {
+            x,
+            y,
+            z,
+            strength,
+            records,
+            player_dx,
+            player_dy,
+            player_dz,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct UnloadChunk {
-    x: i32,
-    z: i32,
+    pub x: i32,
+    pub z: i32,
 }
-impl UnloadChunk {
+impl Packet for UnloadChunk {
     fn id(&self) -> u32 {
         30u32
     }
@@ -1596,18 +2385,35 @@ impl UnloadChunk {
         "UnloadChunk"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let x = self.x;
         buf.put_i32(x as i32);
         let z = self.z;
         buf.put_i32(z as i32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct UnloadChunkReader;
+impl Default for UnloadChunkReader {
+    fn default() -> Self {
+        UnloadChunkReader
+    }
+}
+impl PacketReader for UnloadChunkReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let x = buf.try_get_i32()?;
+        let z = buf.try_get_i32()?;
+        let packet = UnloadChunk { x, z };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct ChangeGameState<P: Provider> {
-    reason: ChangeGameStateReason<P>,
-    value: f32,
+    pub reason: ChangeGameStateReason<P>,
+    pub value: f32,
 }
-impl<P> ChangeGameState<P>
+impl<P> Packet for ChangeGameState<P>
 where
     P: Provider,
 {
@@ -1618,6 +2424,7 @@ where
         "ChangeGameState"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let reason = self.reason;
         let reason = reason.repr();
         buf.put_u8(reason as u8);
@@ -1625,13 +2432,36 @@ where
         buf.put_f32(value as f32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct ChangeGameStateReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for ChangeGameStateReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for ChangeGameStateReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let reason = buf.try_get_u8()?;
+        let reason = ChangeGameStateReason::read_from(buf, reason as i64)?;
+        let value = buf.try_get_f32()?;
+        let packet = ChangeGameState::<P> { reason, value };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct OpenHorseWindow {
-    window_id: u8,
-    num_slots: i32,
-    entity: i32,
+    pub window_id: u8,
+    pub num_slots: i32,
+    pub entity: i32,
 }
-impl OpenHorseWindow {
+impl Packet for OpenHorseWindow {
     fn id(&self) -> u32 {
         32u32
     }
@@ -1639,6 +2469,7 @@ impl OpenHorseWindow {
         "OpenHorseWindow"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
         let num_slots = self.num_slots;
@@ -1647,11 +2478,32 @@ impl OpenHorseWindow {
         buf.put_i32(entity as i32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct OpenHorseWindowReader;
+impl Default for OpenHorseWindowReader {
+    fn default() -> Self {
+        OpenHorseWindowReader
+    }
+}
+impl PacketReader for OpenHorseWindowReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let window_id = buf.try_get_u8()?;
+        let num_slots = buf.try_get_i32()?;
+        let entity = buf.try_get_i32()?;
+        let packet = OpenHorseWindow {
+            window_id,
+            num_slots,
+            entity,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct KeepAlive {
-    id: i64,
+    pub id: i64,
 }
-impl KeepAlive {
+impl Packet for KeepAlive {
     fn id(&self) -> u32 {
         33u32
     }
@@ -1659,29 +2511,61 @@ impl KeepAlive {
         "KeepAlive"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let id = self.id;
         buf.put_i64(id as i64);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct KeepAliveReader;
+impl Default for KeepAliveReader {
+    fn default() -> Self {
+        KeepAliveReader
+    }
+}
+impl PacketReader for KeepAliveReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let id = buf.try_get_i64()?;
+        let packet = KeepAlive { id };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct ChunkData {}
-impl ChunkData {
+impl Packet for ChunkData {
     fn id(&self) -> u32 {
         34u32
     }
     fn name(&self) -> &'static str {
         "ChunkData"
     }
-    fn write_to(self, buf: &mut BytesMut) {}
+    fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
+    }
+}
+#[derive(Debug, Clone, Copy)]
+pub struct ChunkDataReader;
+impl Default for ChunkDataReader {
+    fn default() -> Self {
+        ChunkDataReader
+    }
+}
+impl PacketReader for ChunkDataReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let packet = ChunkData {};
+        Ok(smallbox::smallbox!(packet))
+    }
 }
 #[derive(Debug, Clone)]
 pub struct Effect {
-    id: i32,
-    position: BlockPosition,
-    data: i32,
-    disable_relative_volume: bool,
+    pub id: i32,
+    pub position: BlockPosition,
+    pub data: i32,
+    pub disable_relative_volume: bool,
 }
-impl Effect {
+impl Packet for Effect {
     fn id(&self) -> u32 {
         35u32
     }
@@ -1689,40 +2573,80 @@ impl Effect {
         "Effect"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let id = self.id;
         buf.put_i32(id as i32);
         let position = self.position;
-        buf.put_BlockPosition(position as BlockPosition);
+        buf.put_position(position);
         let data = self.data;
         buf.put_i32(data as i32);
         let disable_relative_volume = self.disable_relative_volume;
         buf.put_bool(disable_relative_volume as bool);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct EffectReader;
+impl Default for EffectReader {
+    fn default() -> Self {
+        EffectReader
+    }
+}
+impl PacketReader for EffectReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let id = buf.try_get_i32()?;
+        let position = buf.try_get_position()?;
+        let data = buf.try_get_i32()?;
+        let disable_relative_volume = buf.try_get_bool()?;
+        let packet = Effect {
+            id,
+            position,
+            data,
+            disable_relative_volume,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct UpdateLight {}
-impl UpdateLight {
+impl Packet for UpdateLight {
     fn id(&self) -> u32 {
         36u32
     }
     fn name(&self) -> &'static str {
         "UpdateLight"
     }
-    fn write_to(self, buf: &mut BytesMut) {}
+    fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
+    }
+}
+#[derive(Debug, Clone, Copy)]
+pub struct UpdateLightReader;
+impl Default for UpdateLightReader {
+    fn default() -> Self {
+        UpdateLightReader
+    }
+}
+impl PacketReader for UpdateLightReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let packet = UpdateLight {};
+        Ok(smallbox::smallbox!(packet))
+    }
 }
 #[derive(Debug, Clone)]
 pub struct JoinGame {
-    player_eid: i32,
-    gamemode: u8,
-    dimension: i32,
-    hashed_seed: i64,
-    max_players: u8,
-    level_type: String,
-    view_distance: i32,
-    reduced_debug_info: bool,
-    enable_respawn_screen: bool,
+    pub player_eid: i32,
+    pub gamemode: u8,
+    pub dimension: i32,
+    pub hashed_seed: i64,
+    pub max_players: u8,
+    pub level_type: String,
+    pub view_distance: i32,
+    pub reduced_debug_info: bool,
+    pub enable_respawn_screen: bool,
 }
-impl JoinGame {
+impl Packet for JoinGame {
     fn id(&self) -> u32 {
         37u32
     }
@@ -1730,6 +2654,7 @@ impl JoinGame {
         "JoinGame"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let player_eid = self.player_eid;
         buf.put_i32(player_eid as i32);
         let gamemode = self.gamemode;
@@ -1750,15 +2675,48 @@ impl JoinGame {
         buf.put_bool(enable_respawn_screen as bool);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct JoinGameReader;
+impl Default for JoinGameReader {
+    fn default() -> Self {
+        JoinGameReader
+    }
+}
+impl PacketReader for JoinGameReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let player_eid = buf.try_get_i32()?;
+        let gamemode = buf.try_get_u8()?;
+        let dimension = buf.try_get_i32()?;
+        let hashed_seed = buf.try_get_i64()?;
+        let max_players = buf.try_get_u8()?;
+        let level_type = buf.try_get_string()?;
+        let view_distance = buf.try_get_i32()?;
+        let reduced_debug_info = buf.try_get_bool()?;
+        let enable_respawn_screen = buf.try_get_bool()?;
+        let packet = JoinGame {
+            player_eid,
+            gamemode,
+            dimension,
+            hashed_seed,
+            max_players,
+            level_type,
+            view_distance,
+            reduced_debug_info,
+            enable_respawn_screen,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct EntityPosition {
-    entity: i32,
-    dx: i16,
-    dy: i16,
-    dz: i16,
-    on_ground: bool,
+    pub entity: i32,
+    pub dx: i16,
+    pub dy: i16,
+    pub dz: i16,
+    pub on_ground: bool,
 }
-impl EntityPosition {
+impl Packet for EntityPosition {
     fn id(&self) -> u32 {
         38u32
     }
@@ -1766,6 +2724,7 @@ impl EntityPosition {
         "EntityPosition"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let dx = self.dx;
@@ -1778,17 +2737,42 @@ impl EntityPosition {
         buf.put_bool(on_ground as bool);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct EntityPositionReader;
+impl Default for EntityPositionReader {
+    fn default() -> Self {
+        EntityPositionReader
+    }
+}
+impl PacketReader for EntityPositionReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let entity = buf.try_get_i32()?;
+        let dx = buf.try_get_i16()?;
+        let dy = buf.try_get_i16()?;
+        let dz = buf.try_get_i16()?;
+        let on_ground = buf.try_get_bool()?;
+        let packet = EntityPosition {
+            entity,
+            dx,
+            dy,
+            dz,
+            on_ground,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct EntityPositionAndRotation {
-    entity: i32,
-    dx: i16,
-    dy: i16,
-    dz: i16,
-    yaw: u8,
-    pitch: u8,
-    on_ground: bool,
+    pub entity: i32,
+    pub dx: i16,
+    pub dy: i16,
+    pub dz: i16,
+    pub yaw: u8,
+    pub pitch: u8,
+    pub on_ground: bool,
 }
-impl EntityPositionAndRotation {
+impl Packet for EntityPositionAndRotation {
     fn id(&self) -> u32 {
         39u32
     }
@@ -1796,6 +2780,7 @@ impl EntityPositionAndRotation {
         "EntityPositionAndRotation"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let dx = self.dx;
@@ -1812,14 +2797,43 @@ impl EntityPositionAndRotation {
         buf.put_bool(on_ground as bool);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct EntityPositionAndRotationReader;
+impl Default for EntityPositionAndRotationReader {
+    fn default() -> Self {
+        EntityPositionAndRotationReader
+    }
+}
+impl PacketReader for EntityPositionAndRotationReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let entity = buf.try_get_i32()?;
+        let dx = buf.try_get_i16()?;
+        let dy = buf.try_get_i16()?;
+        let dz = buf.try_get_i16()?;
+        let yaw = buf.try_get_u8()?;
+        let pitch = buf.try_get_u8()?;
+        let on_ground = buf.try_get_bool()?;
+        let packet = EntityPositionAndRotation {
+            entity,
+            dx,
+            dy,
+            dz,
+            yaw,
+            pitch,
+            on_ground,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct EntityRotation {
-    entity: i32,
-    yaw: u8,
-    pitch: u8,
-    on_ground: bool,
+    pub entity: i32,
+    pub yaw: u8,
+    pub pitch: u8,
+    pub on_ground: bool,
 }
-impl EntityRotation {
+impl Packet for EntityRotation {
     fn id(&self) -> u32 {
         40u32
     }
@@ -1827,6 +2841,7 @@ impl EntityRotation {
         "EntityRotation"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let yaw = self.yaw;
@@ -1837,11 +2852,34 @@ impl EntityRotation {
         buf.put_bool(on_ground as bool);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct EntityRotationReader;
+impl Default for EntityRotationReader {
+    fn default() -> Self {
+        EntityRotationReader
+    }
+}
+impl PacketReader for EntityRotationReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let entity = buf.try_get_i32()?;
+        let yaw = buf.try_get_u8()?;
+        let pitch = buf.try_get_u8()?;
+        let on_ground = buf.try_get_bool()?;
+        let packet = EntityRotation {
+            entity,
+            yaw,
+            pitch,
+            on_ground,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct EntityMovement {
-    entity: i32,
+    pub entity: i32,
 }
-impl EntityMovement {
+impl Packet for EntityMovement {
     fn id(&self) -> u32 {
         41u32
     }
@@ -1849,19 +2887,35 @@ impl EntityMovement {
         "EntityMovement"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let entity = self.entity;
         buf.put_i32(entity as i32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct EntityMovementReader;
+impl Default for EntityMovementReader {
+    fn default() -> Self {
+        EntityMovementReader
+    }
+}
+impl PacketReader for EntityMovementReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let entity = buf.try_get_i32()?;
+        let packet = EntityMovement { entity };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct VehicleMove {
-    x: f64,
-    y: f64,
-    z: f64,
-    yaw: f32,
-    pitch: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub yaw: f32,
+    pub pitch: f32,
 }
-impl VehicleMove {
+impl Packet for VehicleMove {
     fn id(&self) -> u32 {
         42u32
     }
@@ -1869,6 +2923,7 @@ impl VehicleMove {
         "VehicleMove"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let x = self.x;
         buf.put_f64(x as f64);
         let y = self.y;
@@ -1881,11 +2936,36 @@ impl VehicleMove {
         buf.put_f32(pitch as f32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct VehicleMoveReader;
+impl Default for VehicleMoveReader {
+    fn default() -> Self {
+        VehicleMoveReader
+    }
+}
+impl PacketReader for VehicleMoveReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let x = buf.try_get_f64()?;
+        let y = buf.try_get_f64()?;
+        let z = buf.try_get_f64()?;
+        let yaw = buf.try_get_f32()?;
+        let pitch = buf.try_get_f32()?;
+        let packet = VehicleMove {
+            x,
+            y,
+            z,
+            yaw,
+            pitch,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct OpenBook {
-    hand: i32,
+    pub hand: i32,
 }
-impl OpenBook {
+impl Packet for OpenBook {
     fn id(&self) -> u32 {
         43u32
     }
@@ -1893,17 +2973,33 @@ impl OpenBook {
         "OpenBook"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let hand = self.hand;
         buf.put_i32(hand as i32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct OpenBookReader;
+impl Default for OpenBookReader {
+    fn default() -> Self {
+        OpenBookReader
+    }
+}
+impl PacketReader for OpenBookReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let hand = buf.try_get_i32()?;
+        let packet = OpenBook { hand };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct OpenWindow {
-    window_id: i32,
-    ty: i32,
-    title: String,
+    pub window_id: i32,
+    pub ty: i32,
+    pub title: String,
 }
-impl OpenWindow {
+impl Packet for OpenWindow {
     fn id(&self) -> u32 {
         44u32
     }
@@ -1911,6 +3007,7 @@ impl OpenWindow {
         "OpenWindow"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let window_id = self.window_id;
         buf.put_i32(window_id as i32);
         let ty = self.ty;
@@ -1919,11 +3016,32 @@ impl OpenWindow {
         buf.put_string(title);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct OpenWindowReader;
+impl Default for OpenWindowReader {
+    fn default() -> Self {
+        OpenWindowReader
+    }
+}
+impl PacketReader for OpenWindowReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let window_id = buf.try_get_i32()?;
+        let ty = buf.try_get_i32()?;
+        let title = buf.try_get_string()?;
+        let packet = OpenWindow {
+            window_id,
+            ty,
+            title,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct OpenSignEditor {
-    position: BlockPosition,
+    pub position: BlockPosition,
 }
-impl OpenSignEditor {
+impl Packet for OpenSignEditor {
     fn id(&self) -> u32 {
         45u32
     }
@@ -1931,16 +3049,32 @@ impl OpenSignEditor {
         "OpenSignEditor"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let position = self.position;
-        buf.put_BlockPosition(position as BlockPosition);
+        buf.put_position(position);
+    }
+}
+#[derive(Debug, Clone, Copy)]
+pub struct OpenSignEditorReader;
+impl Default for OpenSignEditorReader {
+    fn default() -> Self {
+        OpenSignEditorReader
+    }
+}
+impl PacketReader for OpenSignEditorReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let position = buf.try_get_position()?;
+        let packet = OpenSignEditor { position };
+        Ok(smallbox::smallbox!(packet))
     }
 }
 #[derive(Debug, Clone)]
 pub struct CraftRecipeResponse {
-    window_id: u8,
-    recipe: String,
+    pub window_id: u8,
+    pub recipe: String,
 }
-impl CraftRecipeResponse {
+impl Packet for CraftRecipeResponse {
     fn id(&self) -> u32 {
         46u32
     }
@@ -1948,19 +3082,36 @@ impl CraftRecipeResponse {
         "CraftRecipeResponse"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
         let recipe = self.recipe;
         buf.put_string(recipe);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct CraftRecipeResponseReader;
+impl Default for CraftRecipeResponseReader {
+    fn default() -> Self {
+        CraftRecipeResponseReader
+    }
+}
+impl PacketReader for CraftRecipeResponseReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let window_id = buf.try_get_u8()?;
+        let recipe = buf.try_get_string()?;
+        let packet = CraftRecipeResponse { window_id, recipe };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct PlayerAbilities {
-    flags: i8,
-    flying_speed: f32,
-    fov_modifier: f32,
+    pub flags: i8,
+    pub flying_speed: f32,
+    pub fov_modifier: f32,
 }
-impl PlayerAbilities {
+impl Packet for PlayerAbilities {
     fn id(&self) -> u32 {
         47u32
     }
@@ -1968,6 +3119,7 @@ impl PlayerAbilities {
         "PlayerAbilities"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let flags = self.flags;
         buf.put_i8(flags as i8);
         let flying_speed = self.flying_speed;
@@ -1976,12 +3128,32 @@ impl PlayerAbilities {
         buf.put_f32(fov_modifier as f32);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct PlayerAbilitiesReader;
+impl Default for PlayerAbilitiesReader {
+    fn default() -> Self {
+        PlayerAbilitiesReader
+    }
+}
+impl PacketReader for PlayerAbilitiesReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let flags = buf.try_get_i8()?;
+        let flying_speed = buf.try_get_f32()?;
+        let fov_modifier = buf.try_get_f32()?;
+        let packet = PlayerAbilities {
+            flags,
+            flying_speed,
+            fov_modifier,
+        };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct CombatEvent<P: Provider> {
-    event_id: i32,
-    event: CombatEventType<P>,
+    pub event: CombatEventType<P>,
 }
-impl<P> CombatEvent<P>
+impl<P> Packet for CombatEvent<P>
 where
     P: Provider,
 {
@@ -1992,20 +3164,59 @@ where
         "CombatEvent"
     }
     fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
         let event_id = self.event.repr() as i32;
         buf.put_i32(event_id as i32);
         let event = self.event;
         event.write_to(buf);
     }
 }
+#[derive(Debug, Clone, Copy)]
+pub struct CombatEventReader<P>(std::marker::PhantomData<P>);
+impl<P> Default for CombatEventReader<P>
+where
+    P: Provider,
+{
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<P> PacketReader for CombatEventReader<P>
+where
+    P: Provider,
+{
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let event_repr = buf.try_get_i32()?;
+        let event = CombatEventType::<P>::read_from(buf, event_repr as i64)?;
+        let packet = CombatEvent::<P> { event };
+        Ok(smallbox::smallbox!(packet))
+    }
+}
 #[derive(Debug, Clone)]
 pub struct PlayerInfo {}
-impl PlayerInfo {
+impl Packet for PlayerInfo {
     fn id(&self) -> u32 {
         49u32
     }
     fn name(&self) -> &'static str {
         "PlayerInfo"
     }
-    fn write_to(self, buf: &mut BytesMut) {}
+    fn write_to(self, buf: &mut BytesMut) {
+        let version = VERSION;
+    }
+}
+#[derive(Debug, Clone, Copy)]
+pub struct PlayerInfoReader;
+impl Default for PlayerInfoReader {
+    fn default() -> Self {
+        PlayerInfoReader
+    }
+}
+impl PacketReader for PlayerInfoReader {
+    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
+        let version = VERSION;
+        let packet = PlayerInfo {};
+        Ok(smallbox::smallbox!(packet))
+    }
 }
