@@ -384,7 +384,7 @@ fn compile_packet_set(
                     defs,
                     set,
                     next_packet_id,
-                    next_packet_is_manual.clone(),
+                    next_packet_is_manual.take(),
                 )?;
                 next_packet_id += 1;
             }
