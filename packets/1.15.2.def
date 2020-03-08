@@ -415,7 +415,7 @@ clientbound {
         } event;
     }
 
-    @manual ("player_info.1.15.2.rs")
+    @manual("player_info.1.15.2.rs")
     PlayerInfo {}
 }
 

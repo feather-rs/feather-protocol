@@ -8,12 +8,9 @@ mod compile;
 mod generate;
 mod parse;
 
-pub async fn compile_def(
-    input_path: impl AsRef<Path>,
-    output_path: impl AsRef<Path>,
-) -> anyhow::Result<()> {
-    let mut input = File::open(input_path.as_ref()).await?;
-    let mut output = File::create(output_path.as_ref()).await?;
+pub async fn compile_def(input_path: &str, output_path: &str) -> anyhow::Result<()> {
+    let mut input = File::open(input_path).await?;
+    let mut output = File::create(output_path).await?;
 
     let mut in_str = String::new();
     input.read_to_string(&mut in_str).await?;
@@ -21,7 +18,7 @@ pub async fn compile_def(
 
     let ttree = parse::parse_str(&in_str)?;
     let compiled = compile::compile_tree(&ttree)?;
-    let generated = generate::generate_packet_code(&compiled)?;
+    let generated = generate::generate_packet_code(&compiled, input_path)?;
 
     output
         .write_all(&b"// This is GENERATED CODE. Do not edit.\n"[..])
@@ -32,7 +29,7 @@ pub async fn compile_def(
 
     // Run rustfmt
     Command::new("rustfmt")
-        .arg(output_path.as_ref().to_str().unwrap())
+        .arg(output_path)
         .output()
         .expect("running rustfmt failed");
 

@@ -10,10 +10,14 @@ use crate::generate::{
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::Read;
+use std::path::PathBuf;
+use std::str::FromStr;
 
-pub fn generate_packets(defs: &PacketDefinitions) -> anyhow::Result<TokenStream> {
-    let clientbound = generate_packet_set(defs, &defs.clientbound)?;
-    let serverbound = generate_packet_set(defs, &defs.serverbound)?;
+pub fn generate_packets(defs: &PacketDefinitions, input_file: &str) -> anyhow::Result<TokenStream> {
+    let clientbound = generate_packet_set(defs, &defs.clientbound, input_file)?;
+    let serverbound = generate_packet_set(defs, &defs.serverbound, input_file)?;
 
     let res = quote! {
         use crate::{Packet, PacketReader, DynPacket, BlockPosition, Node, Slot};
@@ -26,10 +30,11 @@ pub fn generate_packets(defs: &PacketDefinitions) -> anyhow::Result<TokenStream>
 fn generate_packet_set(
     defs: &PacketDefinitions,
     packets: &[Packet],
+    input_file: &str,
 ) -> anyhow::Result<TokenStream> {
     let generated_packets = packets
         .iter()
-        .map(|packet| generate_packet(defs, packet))
+        .map(|packet| generate_packet(defs, packet, input_file))
         .collect::<anyhow::Result<Vec<_>>>()?;
 
     let res = quote! {
@@ -54,7 +59,15 @@ struct PacketAnalysis<'a> {
     needs_type_parameter: bool,
 }
 
-fn generate_packet(defs: &PacketDefinitions, packet: &Packet) -> anyhow::Result<TokenStream> {
+fn generate_packet(
+    defs: &PacketDefinitions,
+    packet: &Packet,
+    input_file: &str,
+) -> anyhow::Result<TokenStream> {
+    if let Some(file_path) = packet.manual.clone() {
+        return read_manual_packet_impl(input_file, &file_path);
+    }
+
     let analysis = analyze_packet(defs, packet)?;
 
     let def = generate_packet_def(packet, &analysis);
@@ -345,6 +358,23 @@ fn generate_struct_field_read_from(
             let #fname = #typename::<P>::read_from(buf)?;
         }
     }
+}
+
+fn read_manual_packet_impl(input_path: &str, impl_path: &str) -> anyhow::Result<TokenStream> {
+    let mut path = PathBuf::from_str(input_path)?
+        .parent()
+        .ok_or(anyhow::anyhow!("no parent to input file"))?
+        .to_path_buf();
+    path.push(impl_path);
+
+    dbg!(&path);
+
+    let mut file = File::open(&path)?;
+
+    let mut s = String::new();
+    file.read_to_string(&mut s)?;
+
+    Ok(TokenStream::from_str(&s).map_err(|e| anyhow::anyhow!(format!("{:?}", e)))?)
 }
 
 fn analyze_packet<'a>(

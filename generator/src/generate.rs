@@ -7,9 +7,9 @@ use quote::quote;
 
 mod packet;
 
-pub fn generate_packet_code(defs: &PacketDefinitions) -> anyhow::Result<String> {
+pub fn generate_packet_code(defs: &PacketDefinitions, input_file: &str) -> anyhow::Result<String> {
     let structs_and_enums = generate_structs_and_enums(defs)?;
-    let packets = generate_packets(defs)?;
+    let packets = generate_packets(defs, input_file)?;
 
     let output = quote! {
         #structs_and_enums

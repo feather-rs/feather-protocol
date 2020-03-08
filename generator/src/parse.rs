@@ -70,6 +70,22 @@ pub enum Literal {
     String(String),
 }
 
+impl Literal {
+    pub fn as_integer(&self) -> Option<i64> {
+        match self {
+            Literal::Integer(x) => Some(*x),
+            _ => None,
+        }
+    }
+
+    pub fn as_string(&self) -> Option<&str> {
+        match self {
+            Literal::String(s) => Some(s.as_str()),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Token {
     Semicolon,  // ;

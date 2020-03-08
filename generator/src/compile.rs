@@ -60,6 +60,9 @@ pub struct Packet {
     pub name: String,
     pub id: u32,
     pub fields: Vec<PacketField>,
+    /// If the packet is manually implemented, stores
+    /// the path to the file (relative to the input file).
+    pub manual: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -117,7 +120,7 @@ impl FieldFrom {
                 }),
             }
         } else {
-            Err(Error::InvalidFieldType)
+            Err(Error::InvalidFieldType(format!("{:?}", construct)))
         }
     }
 
@@ -280,8 +283,8 @@ pub enum Error {
     ExpectedBlock,
     #[error("did not expect keyword {0:?}")]
     UnexpectedKeyword(Keyword),
-    #[error("invalid field type")]
-    InvalidFieldType,
+    #[error("invalid field type {0}")]
+    InvalidFieldType(String),
     #[error("expected token")]
     ExpectedToken,
     #[error("missing semicolon")]
@@ -292,6 +295,8 @@ pub enum Error {
     UnexpectedToken(Token),
     #[error("invalid value-from clause")]
     InvalidValueFrom,
+    #[error("invalid annotation")]
+    InvalidAnnotation,
 }
 
 type Constructs<'a> = Peekable<std::slice::Iter<'a, Construct>>;
@@ -335,6 +340,8 @@ fn compile_packet_set(
 
     let mut next_packet_id = 0u32;
 
+    let mut next_packet_is_manual = None;
+
     loop {
         let construct = match constructs.next() {
             Some(c) => c,
@@ -371,13 +378,48 @@ fn compile_packet_set(
                     .as_block()
                     .ok_or(Error::ExpectedBlock)?;
 
-                compile_packet(name, definition, defs, set, next_packet_id)?;
+                compile_packet(
+                    name,
+                    definition,
+                    defs,
+                    set,
+                    next_packet_id,
+                    next_packet_is_manual.clone(),
+                )?;
                 next_packet_id += 1;
             }
             Construct::Token(Token::Annotation) => {
                 // TODO.
-                let _paren = constructs.next().unwrap();
-                let _paren = constructs.next().unwrap();
+                let name = constructs
+                    .next()
+                    .ok_or(Error::UnexpectedEof)?
+                    .as_identifier()
+                    .ok_or(Error::InvalidAnnotation)?;
+                let content = constructs
+                    .next()
+                    .ok_or(Error::UnexpectedEof)?
+                    .as_parenthesized()
+                    .ok_or(Error::InvalidAnnotation)?;
+
+                match name.as_str() {
+                    "manual" => {
+                        let path = content
+                            .constructs
+                            .first()
+                            .ok_or(Error::UnexpectedEof)?
+                            .as_literal()
+                            .ok_or(Error::InvalidAnnotation)?
+                            .as_string()
+                            .ok_or(Error::InvalidAnnotation)?
+                            .to_string();
+
+                        next_packet_is_manual = Some(path);
+                    }
+                    "skip" => {
+                        next_packet_id += 1;
+                    }
+                    _ => return Err(Error::InvalidAnnotation),
+                }
             }
             x => return Err(Error::UnexpectedConstruct(x.clone())),
         }
@@ -446,7 +488,23 @@ fn compile_packet(
     defs: &mut PacketDefinitions,
     set: PacketSet,
     id: u32,
+    is_manual: Option<String>,
 ) -> Result<(), Error> {
+    if let Some(path) = is_manual {
+        let packet = Packet {
+            name: String::from("undefined"),
+            id,
+            fields: vec![],
+            manual: Some(path),
+        };
+        match set {
+            PacketSet::Clientbound => &mut defs.clientbound,
+            PacketSet::Serverbound => &mut defs.serverbound,
+        }
+        .push(packet);
+        return Ok(());
+    }
+
     // Compile fields.
     let mut fields = vec![];
 
@@ -463,6 +521,7 @@ fn compile_packet(
         name: String::from(name),
         id,
         fields,
+        manual: None,
     };
     match set {
         PacketSet::Clientbound => &mut defs.clientbound,
@@ -569,14 +628,14 @@ fn packet_field_type_from_construct(
                 keyword,
             )?),
             k => Ok(FieldType::from_construct(&Construct::Keyword(k.clone()))
-                .ok_or(Error::InvalidFieldType)?),
+                .ok_or(Error::InvalidFieldType(format!("{:?}", keyword)))?),
         }
     } else if let Some(identifier) = ty.as_identifier() {
         Ok(FieldType::StructOrEnum {
             name: String::from(identifier),
         })
     } else {
-        Err(Error::InvalidFieldType)
+        Err(Error::InvalidFieldType(format!("{:?}", ty)))
     }
 }
 
@@ -678,7 +737,7 @@ fn compile_struct_field(
     defs: &mut PacketDefinitions,
 ) -> Result<StructField, Error> {
     let ty = constructs.next().ok_or(Error::UnexpectedEof)?;
-    let ty = FieldType::from_construct(ty).ok_or(Error::InvalidFieldType)?;
+    let ty = FieldType::from_construct(ty).ok_or(Error::InvalidFieldType(format!("{:?}", ty)))?;
 
     let (ty_from, name) = parse_ty_from_and_name(constructs, struct_name, defs)?;
 
