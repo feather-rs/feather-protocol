@@ -1,17 +1,18 @@
 use crate::ProtocolVersion;
+use std::fmt::Debug;
 
 /// Represents a provider which converts networking primitives
 /// into application-specific types, including chunks, blocks,
 /// items, etc.
 pub trait Provider: Send + Sync + 'static {
     /// The chunk type for this application.
-    type Chunk: Clone + Send + Sync;
+    type Chunk: Debug + Clone + Send + Sync;
     /// The chunk section type for this application.
-    type ChunkSection: Clone + Send + Sync;
+    type ChunkSection: Debug + Clone + Send + Sync;
     /// The block type for this application.
-    type Block: Clone + Send + Sync;
+    type Block: Debug + Clone + Send + Sync;
     /// The item type for this application.
-    type Item: Clone + Send + Sync;
+    type Item: Debug + Clone + Send + Sync;
     /// The error type.
     type Error: std::error::Error + Send + Sync;
 

@@ -114,6 +114,8 @@ pub enum Keyword {
     Chat,
     Boolean,
     Position,
+    Slot,
+    Node,
     Nbt,
     Varint,
     Uuid,

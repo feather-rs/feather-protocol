@@ -1,6 +1,7 @@
 use crate::compile::{
     Enum, EnumVariant, FieldFrom, FieldType, PacketDefinitions, Struct, StructField, StructOrEnum,
 };
+use crate::generate::packet::generate_packets;
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::quote;
 
@@ -8,9 +9,11 @@ mod packet;
 
 pub fn generate_packet_code(defs: &PacketDefinitions) -> anyhow::Result<String> {
     let structs_and_enums = generate_structs_and_enums(defs)?;
+    let packets = generate_packets(defs)?;
 
     let output = quote! {
         #structs_and_enums
+        #packets
     };
 
     Ok(output.to_string())
@@ -53,7 +56,7 @@ fn generate_struct(s: &Struct) -> TokenStream {
         });
 
         read_from.push(read_from_statement(field));
-        let write = write_to_statement(field);
+        let write = write_to_statement(field, true);
 
         write_to.push(quote! { let #fname = self.#fname; #write });
 
@@ -61,6 +64,7 @@ fn generate_struct(s: &Struct) -> TokenStream {
     }
 
     let res = quote! {
+        #[derive(Debug, Clone)]
         pub struct #name<P: Provider> {
             #(#fields ,)*
             _phantom: std::marker::PhantomData<P>,
@@ -105,6 +109,7 @@ fn generate_enum(e: &Enum) -> TokenStream {
     }
 
     let res = quote! {
+        #[derive(Debug, Clone)]
         pub enum #name<P: Provider> {
             #(#defs ,)*
             _Phantom(std::marker::PhantomData<P>),
@@ -204,7 +209,7 @@ fn generate_enum_variant_write_to(e: &Enum, variant: &EnumVariant) -> TokenStrea
     for field in &variant.fields {
         let name = ident(&field.name);
         fields.push(quote! { #name });
-        write_to.push(write_to_statement(field));
+        write_to.push(write_to_statement(field, true));
     }
 
     quote! {
@@ -274,7 +279,7 @@ fn read_fn_ident(ty: &FieldType) -> TokenStream {
     }
 }
 
-fn write_to_statement(field: &StructField) -> TokenStream {
+fn write_to_statement(field: &StructField, trailing_semicolon: bool) -> TokenStream {
     let field_name = &field.name;
 
     let f = write_fn_ident(field_name, &field.ty);
@@ -285,13 +290,19 @@ fn write_to_statement(field: &StructField) -> TokenStream {
         let tokens = ty_from.tokens_for_write(quote! { #field_name });
 
         Some(quote! {
-            let #field_name = #tokens
+            let #field_name = #tokens;
         })
     } else {
         None
     };
 
-    quote! { #convert ; #f ; }
+    let semicolon = if trailing_semicolon {
+        Some(quote! { ; })
+    } else {
+        None
+    };
+
+    quote! { #convert #f #semicolon }
 }
 
 fn write_fn_ident(field_name: &str, ty: &FieldType) -> TokenStream {
@@ -313,6 +324,8 @@ fn write_fn_ident(field_name: &str, ty: &FieldType) -> TokenStream {
         FieldType::String | FieldType::Identifier | FieldType::Chat => {
             quote! { buf.put_string(#field_name) }
         }
+        FieldType::Uuid => quote! { buf.put_uuid(#field_name) },
+        FieldType::Nbt => quote! { buf.put_nbt(#field_name) },
         FieldType::Array(_) => panic!("struct can't have array field"),
         x => {
             let ident = ident(format!("put_{}", tokenize_field_type(x)));
@@ -362,6 +375,8 @@ fn tokenize_field_type(ty: &FieldType) -> TokenStream {
             let ident = ident(name);
             quote! { #ident::<P> }
         }
+        FieldType::Slot => quote! { Slot },
+        FieldType::Node => quote! { Node },
     }
 }
 

@@ -2,7 +2,7 @@ clientbound {
     SpawnObject {
         varint entity;
         uuid uuid;
-        varint type;
+        varint ty;
         double x;
         double y;
         double z;
@@ -159,7 +159,7 @@ clientbound {
     }
     
     ServerDifficulty {
-        ubyte(difficulty.id) difficulty;
+        ubyte difficulty;
         boolean difficulty_locked;
     }
     
@@ -264,7 +264,7 @@ clientbound {
             byte x;
             byte y;
             byte z;
-        } records[];
+        } records [];
 
         float player_dx;
         float player_dy;
@@ -321,8 +321,8 @@ clientbound {
 
     JoinGame {
         varint player_eid;
-        ubyte(gamemode.id) gamemode;
-        int(dimension.id) dimension;
+        ubyte gamemode;
+        int dimension;
         long hashed_seed;
         ubyte max_players;
         string level_type;
@@ -373,17 +373,17 @@ clientbound {
     }
 
     OpenBook {
-        varint(hand.id) hand;
+        varint hand;
     }
 
     OpenWindow {
         varint window_id;
-        varint type;
+        varint ty;
         chat title;
     }
 
     OpenSignEditor {
-        posiion position;
+        position position;
     }
 
     CraftRecipeResponse {

@@ -1,6 +1,10 @@
 //! Generation of Rust packet code from the compiled packet definitions.
 
-use crate::compile::{FieldType, Packet, PacketDefinitions, PacketField, StructOrEnum, ValueFrom};
+use crate::compile::{
+    FieldFrom, FieldType, Packet, PacketDefinitions, PacketField, StructField, StructOrEnum,
+    ValueFrom,
+};
+use crate::generate::{actual_field_type, ident, tokenize_field_type, write_to_statement};
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::collections::HashMap;
@@ -43,13 +47,119 @@ struct PacketAnalysis<'a> {
     /// Mapping from struct/enum fields to the actual structs
     /// and enums in the compiled definition.
     types: HashMap<&'a PacketField, &'a StructOrEnum>,
+    /// Whether this packet needs a <P: Provider> type parameter.
+    needs_type_parameter: bool,
 }
 
 fn generate_packet(defs: &PacketDefinitions, packet: &Packet) -> anyhow::Result<TokenStream> {
     let analysis = analyze_packet(defs, packet)?;
 
-    let res = quote! {};
+    let def = generate_packet_def(packet, &analysis);
+    let id = generate_packet_id_fn(packet);
+    let write_to = generate_packet_write_to_fn(packet);
+
+    let name = ident(&packet.name);
+
+    let impl_start = if analysis.needs_type_parameter {
+        quote! { impl <P> #name <P> where P: Provider }
+    } else {
+        quote! { impl #name }
+    };
+
+    let res = quote! {
+        #def
+
+        #impl_start {
+            #id
+            #write_to
+        }
+    };
     Ok(res)
+}
+
+fn generate_packet_def(packet: &Packet, analysis: &PacketAnalysis) -> TokenStream {
+    let fields: Vec<_> = packet
+        .fields
+        .iter()
+        .map(|field| {
+            let name = ident(&field.name);
+            let ty = tokenize_field_type(&actual_field_type(field));
+            quote! { #name: #ty }
+        })
+        .collect();
+
+    let name = ident(&packet.name);
+
+    let type_parameter = if analysis.needs_type_parameter {
+        Some(quote! { <P: Provider> })
+    } else {
+        None
+    };
+
+    quote! {
+        #[derive(Debug, Clone)]
+        pub struct #name #type_parameter {
+            #(#fields ,)*
+        }
+    }
+}
+
+fn generate_packet_id_fn(packet: &Packet) -> TokenStream {
+    let id = packet.id;
+    let name = &packet.name;
+    quote! {
+        fn id(&self) -> u32 { #id }
+        fn name(&self) -> &'static str { #name }
+    }
+}
+
+fn generate_packet_write_to_fn(packet: &Packet) -> TokenStream {
+    let mut statements = vec![];
+
+    // Write each field
+    for field in &packet.fields {
+        let fname = ident(&field.name);
+
+        statements.push(if let Some(ref value_from) = field.value_from {
+            let as_clause = tokenize_field_type(&field.ty);
+            match value_from {
+                ValueFrom::ArrayLength { field } => {
+                    let field = ident(field);
+                    quote! { let #fname = self.#field.len() as #as_clause; }
+                }
+                ValueFrom::EnumRepr { field } => {
+                    let field = ident(field);
+                    quote! { let #fname = self.#field.repr() as #as_clause; }
+                }
+            }
+        } else {
+            quote! { let #fname = self.#fname; }
+        });
+
+        match &field.ty {
+            FieldType::Array(of) => {
+                // use fake struct field
+                let write_elem = write_to_statement(
+                    &StructField {
+                        name: String::from("x"),
+                        ty: *of.clone(),
+                        ty_from: None,
+                    },
+                    false,
+                );
+                statements.push(quote! {
+                     #fname.iter().for_each(|x| #write_elem) ;
+                })
+            }
+            _ => statements.push(write_to_statement(&field.inner, true)),
+        }
+    }
+    let res = quote! {
+        fn write_to(self, buf: &mut BytesMut) {
+            #(#statements)*
+        }
+    };
+    res
 }
 
 fn analyze_packet<'a>(
@@ -86,6 +196,8 @@ fn analyze_packet<'a>(
             }
         }
     }
+
+    analysis.needs_type_parameter = packet_needs_type_parameter(packet);
 
     Ok(analysis)
 }
@@ -140,4 +252,23 @@ fn find_array_length_field<'a>(
             field_name
         )),
     }
+}
+
+fn packet_needs_type_parameter(packet: &Packet) -> bool {
+    packet.fields.iter().any(|field| {
+        if let Some(_) = field.ty_from {
+            return true;
+        }
+        match &field.ty {
+            FieldType::StructOrEnum { .. } | FieldType::Block | FieldType::Item => true,
+            FieldType::Array(of) => {
+                if let FieldType::StructOrEnum { .. } = &*of.clone() {
+                    true
+                } else {
+                    false
+                }
+            }
+            _ => false,
+        }
+    })
 }
