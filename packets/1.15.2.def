@@ -398,7 +398,7 @@ clientbound {
     }
 
     CombatEvent {
-        varint(event) event_id;
+        varint event_id (event.repr);
         enum Type {
             EnterCombat {
 

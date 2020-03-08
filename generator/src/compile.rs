@@ -2,6 +2,7 @@ use crate::generate::ident;
 use crate::parse::{Construct, Keyword, Literal, SyntaxTree, Token};
 use proc_macro2::{Ident, TokenStream};
 use std::iter::Peekable;
+use std::ops::{Deref, DerefMut};
 use strum_macros::*;
 use thiserror::Error;
 
@@ -17,6 +18,15 @@ pub struct PacketDefinitions {
 pub enum StructOrEnum {
     Struct(Struct),
     Enum(Enum),
+}
+
+impl StructOrEnum {
+    pub fn name(&self) -> &str {
+        match self {
+            StructOrEnum::Struct(s) => &s.name,
+            StructOrEnum::Enum(e) => &e.name,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -38,7 +48,7 @@ pub struct EnumVariant {
     pub repr: i64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StructField {
     pub name: String,
     pub ty: FieldType,
@@ -52,15 +62,27 @@ pub struct Packet {
     pub fields: Vec<PacketField>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PacketField {
-    pub name: String,
-    pub ty: FieldType,
-    pub ty_from: Option<FieldFrom>,
+    pub inner: StructField,
     pub value_from: Option<ValueFrom>,
 }
 
-#[derive(Debug, Clone)]
+impl Deref for PacketField {
+    type Target = StructField;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl DerefMut for PacketField {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum FieldFrom {
     BlockId,
     BlockType,
@@ -137,7 +159,7 @@ impl FieldFrom {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ValueFrom {
     ArrayLength { field: String },
     EnumRepr { field: String },
@@ -493,10 +515,8 @@ fn compile_packet_field(
     };
 
     let field = PacketField {
-        name,
-        ty,
+        inner: StructField { name, ty, ty_from },
         value_from,
-        ty_from,
     };
 
     Ok(field)
