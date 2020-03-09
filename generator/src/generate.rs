@@ -2,14 +2,19 @@ use crate::compile::{
     Enum, EnumVariant, FieldFrom, FieldType, PacketDefinitions, Struct, StructField, StructOrEnum,
 };
 use crate::generate::packet::generate_packets;
+use crate::integrate::IntegrationData;
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::quote;
 
 mod packet;
 
-pub fn generate_packet_code(defs: &PacketDefinitions, input_file: &str) -> anyhow::Result<String> {
+pub fn generate_packet_code(
+    defs: &PacketDefinitions,
+    input_file: &str,
+    integration: &IntegrationData,
+) -> anyhow::Result<String> {
     let structs_and_enums = generate_structs_and_enums(defs)?;
-    let packets = generate_packets(defs, input_file)?;
+    let packets = generate_packets(defs, input_file, integration)?;
 
     let output = quote! {
         #structs_and_enums
@@ -29,11 +34,12 @@ fn generate_structs_and_enums(defs: &PacketDefinitions) -> anyhow::Result<TokenS
         }
     }
 
+    let version = ident(&defs.version);
+
     Ok(quote! {
         #![allow(warnings)]
         use bytes::{Bytes, BytesMut, Buf, BufMut};
         use crate::{BytesExt, BytesMutExt, Provider, Error, ProtocolVersion};
-        const VERSION: ProtocolVersion = ProtocolVersion::V1_15_2;
 
         #(#tokens)*
     })
@@ -71,8 +77,7 @@ fn generate_struct(s: &Struct) -> TokenStream {
         }
 
         impl <P> #name<P> where P: Provider {
-            pub fn read_from(buf: &mut Bytes) -> anyhow::Result<Self> {
-                let version = VERSION;
+            pub fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<Self> {
                 #(#read_from)*
 
                 Ok(Self {
@@ -81,8 +86,8 @@ fn generate_struct(s: &Struct) -> TokenStream {
                 })
             }
 
-            pub fn write_to(self, buf: &mut BytesMut) {
-                let version = VERSION;
+            pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
+
                 #(#write_to)*
             }
         }
@@ -116,14 +121,14 @@ fn generate_enum(e: &Enum) -> TokenStream {
         }
 
         impl <P> #name<P> where P: Provider {
-            pub fn read_from(buf: &mut Bytes, repr: i64) -> anyhow::Result<Self> {
+            pub fn read_from(buf: &mut Bytes, repr: i64, version: ProtocolVersion) -> anyhow::Result<Self> {
                 match repr {
                     #(#read_froms ,)*
                     repr => Err(Error::InvalidEnumRepr(repr, #name_str).into()),
                 }
             }
 
-            pub fn write_to(self, buf: &mut BytesMut) {
+            pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
                 match self {
                     #(#write_tos ,)*
                     #name::_Phantom(_) => panic!("phantom in {} not allowed", #name_str),
@@ -253,7 +258,7 @@ fn read_fn_ident(ty: &FieldType) -> TokenStream {
         FieldType::StructOrEnum { name } => {
             let ident = ident(name);
             quote! {
-                #ident::<P>::read_from(buf)?
+                #ident::<P>::read_from(buf, version)?
             }
         }
         FieldType::Array(_) => panic!("struct can't have array field"),
@@ -315,7 +320,7 @@ fn write_fn_ident(field_name: &str, ty: &FieldType) -> TokenStream {
     match ty {
         FieldType::StructOrEnum { name: _ } => {
             quote! {
-                #field_name.write_to(buf)
+                #field_name.write_to(buf, version)
             }
         }
         FieldType::OptChat => {

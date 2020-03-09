@@ -1,8 +1,7 @@
-// This is GENERATED CODE. Do not edit.
+// This is GENERATED CODE. Please do not edit.
 #![allow(warnings)]
 use crate::{BytesExt, BytesMutExt, Error, ProtocolVersion, Provider};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
-const VERSION: ProtocolVersion = ProtocolVersion::V1_15_2;
 #[derive(Debug, Clone)]
 pub enum SpawnGlobalEntityType<P: Provider> {
     Thunderbolt {},
@@ -12,13 +11,13 @@ impl<P> SpawnGlobalEntityType<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes, repr: i64) -> anyhow::Result<Self> {
+    pub fn read_from(buf: &mut Bytes, repr: i64, version: ProtocolVersion) -> anyhow::Result<Self> {
         match repr {
             1i64 => Ok(SpawnGlobalEntityType::Thunderbolt {}),
             repr => Err(Error::InvalidEnumRepr(repr, "SpawnGlobalEntityType").into()),
         }
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         match self {
             SpawnGlobalEntityType::Thunderbolt {} => {}
             SpawnGlobalEntityType::_Phantom(_) => {
@@ -47,7 +46,7 @@ impl<P> SpawnPaintingDirection<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes, repr: i64) -> anyhow::Result<Self> {
+    pub fn read_from(buf: &mut Bytes, repr: i64, version: ProtocolVersion) -> anyhow::Result<Self> {
         match repr {
             2i64 => Ok(SpawnPaintingDirection::North {}),
             0i64 => Ok(SpawnPaintingDirection::South {}),
@@ -56,7 +55,7 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "SpawnPaintingDirection").into()),
         }
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         match self {
             SpawnPaintingDirection::North {} => {}
             SpawnPaintingDirection::South {} => {}
@@ -93,7 +92,7 @@ impl<P> EntityAnimationType<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes, repr: i64) -> anyhow::Result<Self> {
+    pub fn read_from(buf: &mut Bytes, repr: i64, version: ProtocolVersion) -> anyhow::Result<Self> {
         match repr {
             0i64 => Ok(EntityAnimationType::SwingMainArm {}),
             1i64 => Ok(EntityAnimationType::TakeDamage {}),
@@ -104,7 +103,7 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "EntityAnimationType").into()),
         }
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         match self {
             EntityAnimationType::SwingMainArm {} => {}
             EntityAnimationType::TakeDamage {} => {}
@@ -141,8 +140,7 @@ impl<P> Statistic<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes) -> anyhow::Result<Self> {
-        let version = VERSION;
+    pub fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<Self> {
         let category_id = buf.try_get_i32()?;
         let statistic_id = buf.try_get_i32()?;
         Ok(Self {
@@ -151,8 +149,7 @@ where
             _phantom: Default::default(),
         })
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let category_id = self.category_id;
         buf.put_i32(category_id as i32);
         let statistic_id = self.statistic_id;
@@ -170,7 +167,7 @@ impl<P> AcknowledgePlayerDiggingStatus<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes, repr: i64) -> anyhow::Result<Self> {
+    pub fn read_from(buf: &mut Bytes, repr: i64, version: ProtocolVersion) -> anyhow::Result<Self> {
         match repr {
             0i64 => Ok(AcknowledgePlayerDiggingStatus::StartedDigging {}),
             1i64 => Ok(AcknowledgePlayerDiggingStatus::CancelledDigging {}),
@@ -178,7 +175,7 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "AcknowledgePlayerDiggingStatus").into()),
         }
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         match self {
             AcknowledgePlayerDiggingStatus::StartedDigging {} => {}
             AcknowledgePlayerDiggingStatus::CancelledDigging {} => {}
@@ -222,7 +219,7 @@ impl<P> UpdateBlockEntityAction<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes, repr: i64) -> anyhow::Result<Self> {
+    pub fn read_from(buf: &mut Bytes, repr: i64, version: ProtocolVersion) -> anyhow::Result<Self> {
         match repr {
             1i64 => Ok(UpdateBlockEntityAction::SetMobSpawnerData {}),
             2i64 => Ok(UpdateBlockEntityAction::SetCommandBlockText {}),
@@ -240,7 +237,7 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "UpdateBlockEntityAction").into()),
         }
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         match self {
             UpdateBlockEntityAction::SetMobSpawnerData {} => {}
             UpdateBlockEntityAction::SetCommandBlockText {} => {}
@@ -310,15 +307,15 @@ impl<P> BossBarData<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes, repr: i64) -> anyhow::Result<Self> {
+    pub fn read_from(buf: &mut Bytes, repr: i64, version: ProtocolVersion) -> anyhow::Result<Self> {
         match repr {
             0i64 => {
                 let title = buf.try_get_string()?;
                 let health = buf.try_get_f32()?;
                 let color = buf.try_get_i32()?;
-                let color = BossBarColor::read_from(buf, color as i64)?;
+                let color = BossBarColor::read_from(buf, color as i64, version)?;
                 let division = buf.try_get_i32()?;
-                let division = BossBarDivision::read_from(buf, division as i64)?;
+                let division = BossBarDivision::read_from(buf, division as i64, version)?;
                 let flags = buf.try_get_u8()?;
                 Ok(BossBarData::Add {
                     title,
@@ -339,9 +336,9 @@ where
             }
             4i64 => {
                 let color = buf.try_get_i32()?;
-                let color = BossBarColor::read_from(buf, color as i64)?;
+                let color = BossBarColor::read_from(buf, color as i64, version)?;
                 let division = buf.try_get_i32()?;
-                let division = BossBarDivision::read_from(buf, division as i64)?;
+                let division = BossBarDivision::read_from(buf, division as i64, version)?;
                 Ok(BossBarData::UpdateStyle { color, division })
             }
             5i64 => {
@@ -351,7 +348,7 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "BossBarData").into()),
         }
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         match self {
             BossBarData::Add {
                 title,
@@ -414,7 +411,7 @@ impl<P> BossBarColor<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes, repr: i64) -> anyhow::Result<Self> {
+    pub fn read_from(buf: &mut Bytes, repr: i64, version: ProtocolVersion) -> anyhow::Result<Self> {
         match repr {
             0i64 => Ok(BossBarColor::Pink {}),
             1i64 => Ok(BossBarColor::Blue {}),
@@ -426,7 +423,7 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "BossBarColor").into()),
         }
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         match self {
             BossBarColor::Pink {} => {}
             BossBarColor::Blue {} => {}
@@ -464,7 +461,7 @@ impl<P> BossBarDivision<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes, repr: i64) -> anyhow::Result<Self> {
+    pub fn read_from(buf: &mut Bytes, repr: i64, version: ProtocolVersion) -> anyhow::Result<Self> {
         match repr {
             0i64 => Ok(BossBarDivision::None {}),
             1i64 => Ok(BossBarDivision::Six {}),
@@ -474,7 +471,7 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "BossBarDivision").into()),
         }
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         match self {
             BossBarDivision::None {} => {}
             BossBarDivision::Six {} => {}
@@ -506,7 +503,7 @@ impl<P> ChatMessagePosition<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes, repr: i64) -> anyhow::Result<Self> {
+    pub fn read_from(buf: &mut Bytes, repr: i64, version: ProtocolVersion) -> anyhow::Result<Self> {
         match repr {
             0i64 => Ok(ChatMessagePosition::Chat {}),
             1i64 => Ok(ChatMessagePosition::SystemMessage {}),
@@ -514,7 +511,7 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "ChatMessagePosition").into()),
         }
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         match self {
             ChatMessagePosition::Chat {} => {}
             ChatMessagePosition::SystemMessage {} => {}
@@ -546,8 +543,7 @@ impl<P> MultiBlockChangeRecord<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes) -> anyhow::Result<Self> {
-        let version = VERSION;
+    pub fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<Self> {
         let horizontal_position = buf.try_get_u8()?;
         let vertical_position = buf.try_get_u8()?;
         let block = buf.try_get_i32()?;
@@ -559,8 +555,7 @@ where
             _phantom: Default::default(),
         })
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let horizontal_position = self.horizontal_position;
         buf.put_u8(horizontal_position as u8);
         let vertical_position = self.vertical_position;
@@ -580,8 +575,7 @@ impl<P> TabCompleteMatch<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes) -> anyhow::Result<Self> {
-        let version = VERSION;
+    pub fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<Self> {
         let name = buf.try_get_string()?;
         let tooltip = {
             let exists = buf.try_get_bool()?;
@@ -597,8 +591,7 @@ where
             _phantom: Default::default(),
         })
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let name = self.name;
         buf.put_string(name);
         let tooltip = self.tooltip;
@@ -619,8 +612,7 @@ impl<P> ExplosionRecord<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes) -> anyhow::Result<Self> {
-        let version = VERSION;
+    pub fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<Self> {
         let x = buf.try_get_i8()?;
         let y = buf.try_get_i8()?;
         let z = buf.try_get_i8()?;
@@ -631,8 +623,7 @@ where
             _phantom: Default::default(),
         })
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let x = self.x;
         buf.put_i8(x as i8);
         let y = self.y;
@@ -661,7 +652,7 @@ impl<P> ChangeGameStateReason<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes, repr: i64) -> anyhow::Result<Self> {
+    pub fn read_from(buf: &mut Bytes, repr: i64, version: ProtocolVersion) -> anyhow::Result<Self> {
         match repr {
             0i64 => Ok(ChangeGameStateReason::InvalidBed {}),
             1i64 => Ok(ChangeGameStateReason::EndRaining {}),
@@ -678,7 +669,7 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "ChangeGameStateReason").into()),
         }
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         match self {
             ChangeGameStateReason::InvalidBed {} => {}
             ChangeGameStateReason::EndRaining {} => {}
@@ -735,7 +726,7 @@ impl<P> CombatEventType<P>
 where
     P: Provider,
 {
-    pub fn read_from(buf: &mut Bytes, repr: i64) -> anyhow::Result<Self> {
+    pub fn read_from(buf: &mut Bytes, repr: i64, version: ProtocolVersion) -> anyhow::Result<Self> {
         match repr {
             0i64 => Ok(CombatEventType::EnterCombat {}),
             1i64 => {
@@ -756,7 +747,7 @@ where
             repr => Err(Error::InvalidEnumRepr(repr, "CombatEventType").into()),
         }
     }
-    pub fn write_to(self, buf: &mut BytesMut) {
+    pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         match self {
             CombatEventType::EnterCombat {} => {}
             CombatEventType::EndCombat { duration, entity } => {
@@ -801,14 +792,21 @@ pub struct SpawnObject {
     pub dz: i16,
 }
 impl Packet for SpawnObject {
-    fn id(&self) -> u32 {
-        0u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 0u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "SpawnObject",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "SpawnObject"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let uuid = self.uuid;
@@ -843,8 +841,7 @@ impl Default for SpawnObjectReader {
     }
 }
 impl PacketReader for SpawnObjectReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let entity = buf.try_get_i32()?;
         let uuid = buf.try_get_uuid()?;
         let ty = buf.try_get_i32()?;
@@ -883,14 +880,21 @@ pub struct SpawnExperienceOrb {
     pub count: i16,
 }
 impl Packet for SpawnExperienceOrb {
-    fn id(&self) -> u32 {
-        1u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 1u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "SpawnExperienceOrb",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "SpawnExperienceOrb"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let x = self.x;
@@ -911,8 +915,7 @@ impl Default for SpawnExperienceOrbReader {
     }
 }
 impl PacketReader for SpawnExperienceOrbReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let entity = buf.try_get_i32()?;
         let x = buf.try_get_f64()?;
         let y = buf.try_get_f64()?;
@@ -937,14 +940,21 @@ impl<P> Packet for SpawnGlobalEntity<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        2u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 2u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "SpawnGlobalEntity",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "SpawnGlobalEntity"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let ty = self.ty;
@@ -966,11 +976,10 @@ impl<P> PacketReader for SpawnGlobalEntityReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let entity = buf.try_get_i32()?;
         let ty = buf.try_get_u8()?;
-        let ty = SpawnGlobalEntityType::read_from(buf, ty as i64)?;
+        let ty = SpawnGlobalEntityType::read_from(buf, ty as i64, version)?;
         let packet = SpawnGlobalEntity::<P> { entity, ty };
         Ok(smallbox::smallbox!(packet))
     }
@@ -991,14 +1000,21 @@ pub struct SpawnMob {
     pub dz: i16,
 }
 impl Packet for SpawnMob {
-    fn id(&self) -> u32 {
-        3u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 3u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "SpawnMob",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "SpawnMob"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let uuid = self.uuid;
@@ -1033,8 +1049,7 @@ impl Default for SpawnMobReader {
     }
 }
 impl PacketReader for SpawnMobReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let entity = buf.try_get_i32()?;
         let uuid = buf.try_get_uuid()?;
         let ty = buf.try_get_i32()?;
@@ -1076,14 +1091,21 @@ impl<P> Packet for SpawnPainting<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        4u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 4u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "SpawnPainting",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "SpawnPainting"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let uuid = self.uuid;
@@ -1111,14 +1133,13 @@ impl<P> PacketReader for SpawnPaintingReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let entity = buf.try_get_i32()?;
         let uuid = buf.try_get_uuid()?;
         let motive = buf.try_get_i32()?;
         let position = buf.try_get_position()?;
         let direction = buf.try_get_u8()?;
-        let direction = SpawnPaintingDirection::read_from(buf, direction as i64)?;
+        let direction = SpawnPaintingDirection::read_from(buf, direction as i64, version)?;
         let packet = SpawnPainting::<P> {
             entity,
             uuid,
@@ -1140,14 +1161,21 @@ pub struct SpawnPlayer {
     pub pitch: u8,
 }
 impl Packet for SpawnPlayer {
-    fn id(&self) -> u32 {
-        5u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 5u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "SpawnPlayer",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "SpawnPlayer"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let uuid = self.uuid;
@@ -1172,8 +1200,7 @@ impl Default for SpawnPlayerReader {
     }
 }
 impl PacketReader for SpawnPlayerReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let entity = buf.try_get_i32()?;
         let uuid = buf.try_get_uuid()?;
         let x = buf.try_get_f64()?;
@@ -1202,14 +1229,21 @@ impl<P> Packet for EntityAnimation<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        6u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 6u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "EntityAnimation",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "EntityAnimation"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let animation = self.animation;
@@ -1231,11 +1265,10 @@ impl<P> PacketReader for EntityAnimationReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let entity = buf.try_get_i32()?;
         let animation = buf.try_get_u8()?;
-        let animation = EntityAnimationType::read_from(buf, animation as i64)?;
+        let animation = EntityAnimationType::read_from(buf, animation as i64, version)?;
         let packet = EntityAnimation::<P> { entity, animation };
         Ok(smallbox::smallbox!(packet))
     }
@@ -1249,18 +1282,27 @@ impl<P> Packet for Statistics<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        7u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 7u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "Statistics",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "Statistics"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let count = self.statistics.len() as i32;
         buf.put_i32(count as i32);
         let statistics = self.statistics;
-        statistics.into_iter().for_each(|x| x.write_to(buf));
+        statistics
+            .into_iter()
+            .for_each(|x| x.write_to(buf, version));
         let value = self.value;
         buf.put_i32(value as i32);
     }
@@ -1279,12 +1321,11 @@ impl<P> PacketReader for StatisticsReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let statistics_len = buf.try_get_i32()?;
         let mut statistics = vec![];
         for _ in 0..statistics_len {
-            let elem = Statistic::<P>::read_from(buf)?;
+            let elem = Statistic::<P>::read_from(buf, version)?;
             statistics.push(elem);
         }
         let value = buf.try_get_i32()?;
@@ -1303,14 +1344,21 @@ impl<P> Packet for AcknowledgePlayerDigging<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        8u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 8u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "AcknowledgePlayerDigging",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "AcknowledgePlayerDigging"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let position = self.position;
         buf.put_position(position);
         let block = self.block;
@@ -1337,13 +1385,12 @@ impl<P> PacketReader for AcknowledgePlayerDiggingReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let position = buf.try_get_position()?;
         let block = buf.try_get_i32()?;
         let block = P::block_from_id(block as u16, version)?;
         let status = buf.try_get_i32()?;
-        let status = AcknowledgePlayerDiggingStatus::read_from(buf, status as i64)?;
+        let status = AcknowledgePlayerDiggingStatus::read_from(buf, status as i64, version)?;
         let successful = buf.try_get_bool()?;
         let packet = AcknowledgePlayerDigging::<P> {
             position,
@@ -1361,14 +1408,21 @@ pub struct BlockBreakAnimation {
     pub destroy_stage: u8,
 }
 impl Packet for BlockBreakAnimation {
-    fn id(&self) -> u32 {
-        9u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 9u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "BlockBreakAnimation",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "BlockBreakAnimation"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let breaker = self.breaker;
         buf.put_i32(breaker as i32);
         let position = self.position;
@@ -1385,8 +1439,7 @@ impl Default for BlockBreakAnimationReader {
     }
 }
 impl PacketReader for BlockBreakAnimationReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let breaker = buf.try_get_i32()?;
         let position = buf.try_get_position()?;
         let destroy_stage = buf.try_get_u8()?;
@@ -1408,14 +1461,21 @@ impl<P> Packet for UpdateBlockEntity<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        10u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 10u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "UpdateBlockEntity",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "UpdateBlockEntity"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let os = self.os;
         buf.put_position(os);
         let action = self.action;
@@ -1439,11 +1499,10 @@ impl<P> PacketReader for UpdateBlockEntityReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let os = buf.try_get_position()?;
         let action = buf.try_get_u8()?;
-        let action = UpdateBlockEntityAction::read_from(buf, action as i64)?;
+        let action = UpdateBlockEntityAction::read_from(buf, action as i64, version)?;
         let data = buf.try_get_nbt()?;
         let packet = UpdateBlockEntity::<P> { os, action, data };
         Ok(smallbox::smallbox!(packet))
@@ -1460,14 +1519,21 @@ impl<P> Packet for BlockAction<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        11u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 11u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "BlockAction",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "BlockAction"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let position = self.position;
         buf.put_position(position);
         let action_id = self.action_id;
@@ -1493,8 +1559,7 @@ impl<P> PacketReader for BlockActionReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let position = buf.try_get_position()?;
         let action_id = buf.try_get_u8()?;
         let action_param = buf.try_get_u8()?;
@@ -1518,14 +1583,21 @@ impl<P> Packet for BlockChange<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        12u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 12u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "BlockChange",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "BlockChange"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let position = self.position;
         buf.put_position(position);
         let block = self.block;
@@ -1547,8 +1619,7 @@ impl<P> PacketReader for BlockChangeReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let position = buf.try_get_position()?;
         let block = buf.try_get_i32()?;
         let block = P::block_from_id(block as u16, version)?;
@@ -1565,20 +1636,27 @@ impl<P> Packet for BossBar<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        13u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 13u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "BossBar",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "BossBar"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let uuid = self.uuid;
         buf.put_uuid(uuid);
         let action = self.data.repr() as i32;
         buf.put_i32(action as i32);
         let data = self.data;
-        data.write_to(buf);
+        data.write_to(buf, version);
     }
 }
 #[derive(Debug, Clone, Copy)]
@@ -1595,11 +1673,10 @@ impl<P> PacketReader for BossBarReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let uuid = buf.try_get_uuid()?;
         let data_repr = buf.try_get_i32()?;
-        let data = BossBarData::<P>::read_from(buf, data_repr as i64)?;
+        let data = BossBarData::<P>::read_from(buf, data_repr as i64, version)?;
         let packet = BossBar::<P> { uuid, data };
         Ok(smallbox::smallbox!(packet))
     }
@@ -1610,14 +1687,21 @@ pub struct ServerDifficulty {
     pub difficulty_locked: bool,
 }
 impl Packet for ServerDifficulty {
-    fn id(&self) -> u32 {
-        14u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 14u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "ServerDifficulty",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "ServerDifficulty"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let difficulty = self.difficulty;
         buf.put_u8(difficulty as u8);
         let difficulty_locked = self.difficulty_locked;
@@ -1632,8 +1716,7 @@ impl Default for ServerDifficultyReader {
     }
 }
 impl PacketReader for ServerDifficultyReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let difficulty = buf.try_get_u8()?;
         let difficulty_locked = buf.try_get_bool()?;
         let packet = ServerDifficulty {
@@ -1652,14 +1735,21 @@ impl<P> Packet for ChatMessage<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        15u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 15u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "ChatMessage",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "ChatMessage"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let data = self.data;
         buf.put_string(data);
         let position = self.position;
@@ -1681,11 +1771,10 @@ impl<P> PacketReader for ChatMessageReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let data = buf.try_get_string()?;
         let position = buf.try_get_u8()?;
-        let position = ChatMessagePosition::read_from(buf, position as i64)?;
+        let position = ChatMessagePosition::read_from(buf, position as i64, version)?;
         let packet = ChatMessage::<P> { data, position };
         Ok(smallbox::smallbox!(packet))
     }
@@ -1700,14 +1789,21 @@ impl<P> Packet for MultiBlockChange<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        16u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 16u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "MultiBlockChange",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "MultiBlockChange"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let chunk_x = self.chunk_x;
         buf.put_i32(chunk_x as i32);
         let chunk_z = self.chunk_z;
@@ -1715,7 +1811,7 @@ where
         let count = self.records.len() as i32;
         buf.put_i32(count as i32);
         let records = self.records;
-        records.into_iter().for_each(|x| x.write_to(buf));
+        records.into_iter().for_each(|x| x.write_to(buf, version));
     }
 }
 #[derive(Debug, Clone, Copy)]
@@ -1732,14 +1828,13 @@ impl<P> PacketReader for MultiBlockChangeReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let chunk_x = buf.try_get_i32()?;
         let chunk_z = buf.try_get_i32()?;
         let records_len = buf.try_get_i32()?;
         let mut records = vec![];
         for _ in 0..records_len {
-            let elem = MultiBlockChangeRecord::<P>::read_from(buf)?;
+            let elem = MultiBlockChangeRecord::<P>::read_from(buf, version)?;
             records.push(elem);
         }
         let packet = MultiBlockChange::<P> {
@@ -1761,14 +1856,21 @@ impl<P> Packet for TabComplete<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        17u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 17u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "TabComplete",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "TabComplete"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let transaction_id = self.transaction_id;
         buf.put_i32(transaction_id as i32);
         let start = self.start;
@@ -1778,7 +1880,7 @@ where
         let count = self.matches.len() as i32;
         buf.put_i32(count as i32);
         let matches = self.matches;
-        matches.into_iter().for_each(|x| x.write_to(buf));
+        matches.into_iter().for_each(|x| x.write_to(buf, version));
     }
 }
 #[derive(Debug, Clone, Copy)]
@@ -1795,15 +1897,14 @@ impl<P> PacketReader for TabCompleteReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let transaction_id = buf.try_get_i32()?;
         let start = buf.try_get_i32()?;
         let length = buf.try_get_i32()?;
         let matches_len = buf.try_get_i32()?;
         let mut matches = vec![];
         for _ in 0..matches_len {
-            let elem = TabCompleteMatch::<P>::read_from(buf)?;
+            let elem = TabCompleteMatch::<P>::read_from(buf, version)?;
             matches.push(elem);
         }
         let packet = TabComplete::<P> {
@@ -1821,14 +1922,21 @@ pub struct DeclareCommands {
     pub root_index: i32,
 }
 impl Packet for DeclareCommands {
-    fn id(&self) -> u32 {
-        18u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 18u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "DeclareCommands",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "DeclareCommands"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let count = self.nodes.len() as i32;
         buf.put_i32(count as i32);
         let nodes = self.nodes;
@@ -1845,8 +1953,7 @@ impl Default for DeclareCommandsReader {
     }
 }
 impl PacketReader for DeclareCommandsReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let nodes_len = buf.try_get_i32()?;
         let mut nodes = vec![];
         for _ in 0..nodes_len {
@@ -1865,14 +1972,21 @@ pub struct WindowConfirmation {
     pub accepted: bool,
 }
 impl Packet for WindowConfirmation {
-    fn id(&self) -> u32 {
-        19u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 19u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "WindowConfirmation",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "WindowConfirmation"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
         let action_number = self.action_number;
@@ -1889,8 +2003,7 @@ impl Default for WindowConfirmationReader {
     }
 }
 impl PacketReader for WindowConfirmationReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let window_id = buf.try_get_u8()?;
         let action_number = buf.try_get_i16()?;
         let accepted = buf.try_get_bool()?;
@@ -1907,14 +2020,21 @@ pub struct CloseWindow {
     pub window_id: u8,
 }
 impl Packet for CloseWindow {
-    fn id(&self) -> u32 {
-        20u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 20u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "CloseWindow",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "CloseWindow"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
     }
@@ -1927,8 +2047,7 @@ impl Default for CloseWindowReader {
     }
 }
 impl PacketReader for CloseWindowReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let window_id = buf.try_get_u8()?;
         let packet = CloseWindow { window_id };
         Ok(smallbox::smallbox!(packet))
@@ -1940,14 +2059,21 @@ pub struct WindowItems {
     pub slots: Vec<Slot>,
 }
 impl Packet for WindowItems {
-    fn id(&self) -> u32 {
-        21u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 21u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "WindowItems",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "WindowItems"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
         let count = self.slots.len() as i16;
@@ -1964,8 +2090,7 @@ impl Default for WindowItemsReader {
     }
 }
 impl PacketReader for WindowItemsReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let window_id = buf.try_get_u8()?;
         let slots_len = buf.try_get_i16()?;
         let mut slots = vec![];
@@ -1984,14 +2109,21 @@ pub struct WindowProperty {
     pub value: i16,
 }
 impl Packet for WindowProperty {
-    fn id(&self) -> u32 {
-        22u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 22u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "WindowProperty",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "WindowProperty"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
         let property = self.property;
@@ -2008,8 +2140,7 @@ impl Default for WindowPropertyReader {
     }
 }
 impl PacketReader for WindowPropertyReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let window_id = buf.try_get_u8()?;
         let property = buf.try_get_i16()?;
         let value = buf.try_get_i16()?;
@@ -2028,14 +2159,21 @@ pub struct SetSlot {
     pub slot: Slot,
 }
 impl Packet for SetSlot {
-    fn id(&self) -> u32 {
-        23u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 23u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "SetSlot",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "SetSlot"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
         let slot_index = self.slot_index;
@@ -2052,8 +2190,7 @@ impl Default for SetSlotReader {
     }
 }
 impl PacketReader for SetSlotReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let window_id = buf.try_get_u8()?;
         let slot_index = buf.try_get_i16()?;
         let slot = buf.try_get_slot()?;
@@ -2074,14 +2211,21 @@ impl<P> Packet for SetCooldown<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        24u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 24u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "SetCooldown",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "SetCooldown"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let item = self.item;
         let item = P::item_id(item, version);
         buf.put_i32(item as i32);
@@ -2103,8 +2247,7 @@ impl<P> PacketReader for SetCooldownReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let item = buf.try_get_i32()?;
         let item = P::item_from_id(item as u16, version)?;
         let cooldown_ticks = buf.try_get_i32()?;
@@ -2121,14 +2264,21 @@ pub struct PluginMessage {
     pub data: Vec<i8>,
 }
 impl Packet for PluginMessage {
-    fn id(&self) -> u32 {
-        25u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 25u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "PluginMessage",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "PluginMessage"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let channel = self.channel;
         buf.put_string(channel);
         let data = self.data;
@@ -2143,8 +2293,7 @@ impl Default for PluginMessageReader {
     }
 }
 impl PacketReader for PluginMessageReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let channel = buf.try_get_string()?;
         let mut data = vec![];
         while buf.has_remaining() {
@@ -2166,14 +2315,21 @@ pub struct NamedSoundEffect {
     pub pitch: f32,
 }
 impl Packet for NamedSoundEffect {
-    fn id(&self) -> u32 {
-        26u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 26u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "NamedSoundEffect",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "NamedSoundEffect"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let name = self.name;
         buf.put_string(name);
         let category = self.category;
@@ -2198,8 +2354,7 @@ impl Default for NamedSoundEffectReader {
     }
 }
 impl PacketReader for NamedSoundEffectReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let name = buf.try_get_string()?;
         let category = buf.try_get_i32()?;
         let posx = buf.try_get_i32()?;
@@ -2224,14 +2379,21 @@ pub struct Disconnect {
     pub reason: String,
 }
 impl Packet for Disconnect {
-    fn id(&self) -> u32 {
-        27u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 27u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "Disconnect",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "Disconnect"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let reason = self.reason;
         buf.put_string(reason);
     }
@@ -2244,8 +2406,7 @@ impl Default for DisconnectReader {
     }
 }
 impl PacketReader for DisconnectReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let reason = buf.try_get_string()?;
         let packet = Disconnect { reason };
         Ok(smallbox::smallbox!(packet))
@@ -2257,14 +2418,21 @@ pub struct EntityStatus {
     pub status: i8,
 }
 impl Packet for EntityStatus {
-    fn id(&self) -> u32 {
-        28u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 28u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "EntityStatus",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "EntityStatus"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let status = self.status;
@@ -2279,8 +2447,7 @@ impl Default for EntityStatusReader {
     }
 }
 impl PacketReader for EntityStatusReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let entity = buf.try_get_i32()?;
         let status = buf.try_get_i8()?;
         let packet = EntityStatus { entity, status };
@@ -2302,14 +2469,21 @@ impl<P> Packet for Explosion<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        29u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 29u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "Explosion",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "Explosion"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let x = self.x;
         buf.put_f32(x as f32);
         let y = self.y;
@@ -2321,7 +2495,7 @@ where
         let record_count = self.records.len() as i32;
         buf.put_i32(record_count as i32);
         let records = self.records;
-        records.into_iter().for_each(|x| x.write_to(buf));
+        records.into_iter().for_each(|x| x.write_to(buf, version));
         let player_dx = self.player_dx;
         buf.put_f32(player_dx as f32);
         let player_dy = self.player_dy;
@@ -2344,8 +2518,7 @@ impl<P> PacketReader for ExplosionReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let x = buf.try_get_f32()?;
         let y = buf.try_get_f32()?;
         let z = buf.try_get_f32()?;
@@ -2353,7 +2526,7 @@ where
         let records_len = buf.try_get_i32()?;
         let mut records = vec![];
         for _ in 0..records_len {
-            let elem = ExplosionRecord::<P>::read_from(buf)?;
+            let elem = ExplosionRecord::<P>::read_from(buf, version)?;
             records.push(elem);
         }
         let player_dx = buf.try_get_f32()?;
@@ -2378,14 +2551,21 @@ pub struct UnloadChunk {
     pub z: i32,
 }
 impl Packet for UnloadChunk {
-    fn id(&self) -> u32 {
-        30u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 30u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "UnloadChunk",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "UnloadChunk"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let x = self.x;
         buf.put_i32(x as i32);
         let z = self.z;
@@ -2400,8 +2580,7 @@ impl Default for UnloadChunkReader {
     }
 }
 impl PacketReader for UnloadChunkReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let x = buf.try_get_i32()?;
         let z = buf.try_get_i32()?;
         let packet = UnloadChunk { x, z };
@@ -2417,14 +2596,21 @@ impl<P> Packet for ChangeGameState<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        31u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 31u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "ChangeGameState",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "ChangeGameState"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let reason = self.reason;
         let reason = reason.repr();
         buf.put_u8(reason as u8);
@@ -2446,10 +2632,9 @@ impl<P> PacketReader for ChangeGameStateReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let reason = buf.try_get_u8()?;
-        let reason = ChangeGameStateReason::read_from(buf, reason as i64)?;
+        let reason = ChangeGameStateReason::read_from(buf, reason as i64, version)?;
         let value = buf.try_get_f32()?;
         let packet = ChangeGameState::<P> { reason, value };
         Ok(smallbox::smallbox!(packet))
@@ -2462,14 +2647,21 @@ pub struct OpenHorseWindow {
     pub entity: i32,
 }
 impl Packet for OpenHorseWindow {
-    fn id(&self) -> u32 {
-        32u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 32u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "OpenHorseWindow",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "OpenHorseWindow"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
         let num_slots = self.num_slots;
@@ -2486,8 +2678,7 @@ impl Default for OpenHorseWindowReader {
     }
 }
 impl PacketReader for OpenHorseWindowReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let window_id = buf.try_get_u8()?;
         let num_slots = buf.try_get_i32()?;
         let entity = buf.try_get_i32()?;
@@ -2504,14 +2695,21 @@ pub struct KeepAlive {
     pub id: i64,
 }
 impl Packet for KeepAlive {
-    fn id(&self) -> u32 {
-        33u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 33u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "KeepAlive",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "KeepAlive"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let id = self.id;
         buf.put_i64(id as i64);
     }
@@ -2524,8 +2722,7 @@ impl Default for KeepAliveReader {
     }
 }
 impl PacketReader for KeepAliveReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let id = buf.try_get_i64()?;
         let packet = KeepAlive { id };
         Ok(smallbox::smallbox!(packet))
@@ -2539,14 +2736,21 @@ pub struct Effect {
     pub disable_relative_volume: bool,
 }
 impl Packet for Effect {
-    fn id(&self) -> u32 {
-        35u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 35u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "Effect",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "Effect"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let id = self.id;
         buf.put_i32(id as i32);
         let position = self.position;
@@ -2565,8 +2769,7 @@ impl Default for EffectReader {
     }
 }
 impl PacketReader for EffectReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let id = buf.try_get_i32()?;
         let position = buf.try_get_position()?;
         let data = buf.try_get_i32()?;
@@ -2593,14 +2796,21 @@ pub struct JoinGame {
     pub enable_respawn_screen: bool,
 }
 impl Packet for JoinGame {
-    fn id(&self) -> u32 {
-        38u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 38u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "JoinGame",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "JoinGame"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let player_eid = self.player_eid;
         buf.put_i32(player_eid as i32);
         let gamemode = self.gamemode;
@@ -2629,8 +2839,7 @@ impl Default for JoinGameReader {
     }
 }
 impl PacketReader for JoinGameReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let player_eid = buf.try_get_i32()?;
         let gamemode = buf.try_get_u8()?;
         let dimension = buf.try_get_i32()?;
@@ -2663,14 +2872,21 @@ pub struct EntityPosition {
     pub on_ground: bool,
 }
 impl Packet for EntityPosition {
-    fn id(&self) -> u32 {
-        41u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 41u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "EntityPosition",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "EntityPosition"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let dx = self.dx;
@@ -2691,8 +2907,7 @@ impl Default for EntityPositionReader {
     }
 }
 impl PacketReader for EntityPositionReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let entity = buf.try_get_i32()?;
         let dx = buf.try_get_i16()?;
         let dy = buf.try_get_i16()?;
@@ -2719,14 +2934,21 @@ pub struct EntityPositionAndRotation {
     pub on_ground: bool,
 }
 impl Packet for EntityPositionAndRotation {
-    fn id(&self) -> u32 {
-        42u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 42u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "EntityPositionAndRotation",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "EntityPositionAndRotation"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let dx = self.dx;
@@ -2751,8 +2973,7 @@ impl Default for EntityPositionAndRotationReader {
     }
 }
 impl PacketReader for EntityPositionAndRotationReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let entity = buf.try_get_i32()?;
         let dx = buf.try_get_i16()?;
         let dy = buf.try_get_i16()?;
@@ -2780,14 +3001,21 @@ pub struct EntityRotation {
     pub on_ground: bool,
 }
 impl Packet for EntityRotation {
-    fn id(&self) -> u32 {
-        43u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 43u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "EntityRotation",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "EntityRotation"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let entity = self.entity;
         buf.put_i32(entity as i32);
         let yaw = self.yaw;
@@ -2806,8 +3034,7 @@ impl Default for EntityRotationReader {
     }
 }
 impl PacketReader for EntityRotationReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let entity = buf.try_get_i32()?;
         let yaw = buf.try_get_u8()?;
         let pitch = buf.try_get_u8()?;
@@ -2826,14 +3053,21 @@ pub struct EntityMovement {
     pub entity: i32,
 }
 impl Packet for EntityMovement {
-    fn id(&self) -> u32 {
-        44u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 44u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "EntityMovement",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "EntityMovement"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let entity = self.entity;
         buf.put_i32(entity as i32);
     }
@@ -2846,8 +3080,7 @@ impl Default for EntityMovementReader {
     }
 }
 impl PacketReader for EntityMovementReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let entity = buf.try_get_i32()?;
         let packet = EntityMovement { entity };
         Ok(smallbox::smallbox!(packet))
@@ -2862,14 +3095,21 @@ pub struct VehicleMove {
     pub pitch: f32,
 }
 impl Packet for VehicleMove {
-    fn id(&self) -> u32 {
-        45u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 45u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "VehicleMove",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "VehicleMove"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let x = self.x;
         buf.put_f64(x as f64);
         let y = self.y;
@@ -2890,8 +3130,7 @@ impl Default for VehicleMoveReader {
     }
 }
 impl PacketReader for VehicleMoveReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let x = buf.try_get_f64()?;
         let y = buf.try_get_f64()?;
         let z = buf.try_get_f64()?;
@@ -2912,14 +3151,21 @@ pub struct OpenBook {
     pub hand: i32,
 }
 impl Packet for OpenBook {
-    fn id(&self) -> u32 {
-        46u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 46u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "OpenBook",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "OpenBook"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let hand = self.hand;
         buf.put_i32(hand as i32);
     }
@@ -2932,8 +3178,7 @@ impl Default for OpenBookReader {
     }
 }
 impl PacketReader for OpenBookReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let hand = buf.try_get_i32()?;
         let packet = OpenBook { hand };
         Ok(smallbox::smallbox!(packet))
@@ -2946,14 +3191,21 @@ pub struct OpenWindow {
     pub title: String,
 }
 impl Packet for OpenWindow {
-    fn id(&self) -> u32 {
-        47u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 47u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "OpenWindow",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "OpenWindow"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let window_id = self.window_id;
         buf.put_i32(window_id as i32);
         let ty = self.ty;
@@ -2970,8 +3222,7 @@ impl Default for OpenWindowReader {
     }
 }
 impl PacketReader for OpenWindowReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let window_id = buf.try_get_i32()?;
         let ty = buf.try_get_i32()?;
         let title = buf.try_get_string()?;
@@ -2988,14 +3239,21 @@ pub struct OpenSignEditor {
     pub position: BlockPosition,
 }
 impl Packet for OpenSignEditor {
-    fn id(&self) -> u32 {
-        48u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 48u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "OpenSignEditor",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "OpenSignEditor"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let position = self.position;
         buf.put_position(position);
     }
@@ -3008,8 +3266,7 @@ impl Default for OpenSignEditorReader {
     }
 }
 impl PacketReader for OpenSignEditorReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let position = buf.try_get_position()?;
         let packet = OpenSignEditor { position };
         Ok(smallbox::smallbox!(packet))
@@ -3021,14 +3278,21 @@ pub struct CraftRecipeResponse {
     pub recipe: String,
 }
 impl Packet for CraftRecipeResponse {
-    fn id(&self) -> u32 {
-        49u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 49u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "CraftRecipeResponse",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "CraftRecipeResponse"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let window_id = self.window_id;
         buf.put_u8(window_id as u8);
         let recipe = self.recipe;
@@ -3043,8 +3307,7 @@ impl Default for CraftRecipeResponseReader {
     }
 }
 impl PacketReader for CraftRecipeResponseReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let window_id = buf.try_get_u8()?;
         let recipe = buf.try_get_string()?;
         let packet = CraftRecipeResponse { window_id, recipe };
@@ -3058,14 +3321,21 @@ pub struct PlayerAbilities {
     pub fov_modifier: f32,
 }
 impl Packet for PlayerAbilities {
-    fn id(&self) -> u32 {
-        50u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 50u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "PlayerAbilities",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "PlayerAbilities"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let flags = self.flags;
         buf.put_i8(flags as i8);
         let flying_speed = self.flying_speed;
@@ -3082,8 +3352,7 @@ impl Default for PlayerAbilitiesReader {
     }
 }
 impl PacketReader for PlayerAbilitiesReader {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let flags = buf.try_get_i8()?;
         let flying_speed = buf.try_get_f32()?;
         let fov_modifier = buf.try_get_f32()?;
@@ -3103,18 +3372,25 @@ impl<P> Packet for CombatEvent<P>
 where
     P: Provider,
 {
-    fn id(&self) -> u32 {
-        51u32
+    fn id(&self, version: ProtocolVersion) -> u32 {
+        match version {
+            ProtocolVersion::V1_15_2 => 51u32,
+            x => panic!(
+                "unsupported protocol version {:?} for packet {} defined for version {:?}",
+                x,
+                "CombatEvent",
+                ProtocolVersion::V1_15_2
+            ),
+        }
     }
     fn name(&self) -> &'static str {
         "CombatEvent"
     }
-    fn write_to(self, buf: &mut BytesMut) {
-        let version = VERSION;
+    fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
         let event_id = self.event.repr() as i32;
         buf.put_i32(event_id as i32);
         let event = self.event;
-        event.write_to(buf);
+        event.write_to(buf, version);
     }
 }
 #[derive(Debug, Clone, Copy)]
@@ -3131,10 +3407,9 @@ impl<P> PacketReader for CombatEventReader<P>
 where
     P: Provider,
 {
-    fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-        let version = VERSION;
+    fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
         let event_repr = buf.try_get_i32()?;
-        let event = CombatEventType::<P>::read_from(buf, event_repr as i64)?;
+        let event = CombatEventType::<P>::read_from(buf, event_repr as i64, version)?;
         let packet = CombatEvent::<P> { event };
         Ok(smallbox::smallbox!(packet))
     }

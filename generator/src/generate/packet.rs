@@ -7,6 +7,8 @@ use crate::compile::{
 use crate::generate::{
     actual_field_type, ident, read_from_statement, tokenize_field_type, write_to_statement,
 };
+use crate::integrate::{IntegrationData, PacketIdentifier};
+use crate::Version;
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::collections::HashMap;
@@ -15,9 +17,13 @@ use std::io::Read;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-pub fn generate_packets(defs: &PacketDefinitions, input_file: &str) -> anyhow::Result<TokenStream> {
-    let clientbound = generate_packet_set(defs, &defs.clientbound, input_file)?;
-    let serverbound = generate_packet_set(defs, &defs.serverbound, input_file)?;
+pub fn generate_packets(
+    defs: &PacketDefinitions,
+    input_file: &str,
+    integration: &IntegrationData,
+) -> anyhow::Result<TokenStream> {
+    let clientbound = generate_packet_set(defs, &defs.clientbound, input_file, integration)?;
+    let serverbound = generate_packet_set(defs, &defs.serverbound, input_file, integration)?;
 
     let res = quote! {
         use crate::{Packet, PacketReader, DynPacket, BlockPosition, Node, Slot};
@@ -31,10 +37,11 @@ fn generate_packet_set(
     defs: &PacketDefinitions,
     packets: &[Packet],
     input_file: &str,
+    integration: &IntegrationData,
 ) -> anyhow::Result<TokenStream> {
     let generated_packets = packets
         .iter()
-        .map(|packet| generate_packet(defs, packet, input_file))
+        .map(|packet| generate_packet(defs, packet, input_file, integration))
         .collect::<anyhow::Result<Vec<_>>>()?;
 
     let res = quote! {
@@ -63,6 +70,7 @@ fn generate_packet(
     defs: &PacketDefinitions,
     packet: &Packet,
     input_file: &str,
+    integration: &IntegrationData,
 ) -> anyhow::Result<TokenStream> {
     if let Some(file_path) = packet.manual.clone() {
         return read_manual_packet_impl(input_file, &file_path);
@@ -71,7 +79,7 @@ fn generate_packet(
     let analysis = analyze_packet(defs, packet)?;
 
     let def = generate_packet_def(packet, &analysis);
-    let id = generate_packet_id_fn(packet);
+    let id = generate_packet_id_fn(packet, &defs.version, integration);
     let write_to = generate_packet_write_to_fn(packet);
     let read_from = generate_packet_read_from_fn(packet, &analysis);
 
@@ -182,11 +190,40 @@ fn generate_packet_def(packet: &Packet, analysis: &PacketAnalysis) -> TokenStrea
     }
 }
 
-fn generate_packet_id_fn(packet: &Packet) -> TokenStream {
+fn generate_packet_id_fn(
+    packet: &Packet,
+    version: &Version,
+    integration: &IntegrationData,
+) -> TokenStream {
+    // switch depending on version
+    let version_ident = ident(version);
     let id = packet.id;
+    let mut match_arms = vec![];
+    match_arms.push(quote! {
+        ProtocolVersion::#version_ident => #id
+    });
+    if let Some(overrides) = integration.packet_id_overrides.get(&PacketIdentifier {
+        name: packet.name.clone(),
+        version: version.clone(),
+    }) {
+        for (over_version, over_id) in overrides {
+            let over_version = ident(over_version);
+            let over_id = *over_id;
+
+            match_arms.push(quote! {
+                ProtocolVersion::#over_version => #over_id
+            });
+        }
+    }
+
     let name = &packet.name;
     quote! {
-        fn id(&self) -> u32 { #id }
+        fn id(&self, version: ProtocolVersion) -> u32 {
+            match version {
+                #(#match_arms ,)*
+                x => panic!("unsupported protocol version {:?} for packet {} defined for version {:?}", x, #name, ProtocolVersion::#version_ident)
+            }
+        }
         fn name(&self) -> &'static str { #name }
     }
 }
@@ -233,8 +270,7 @@ fn generate_packet_write_to_fn(packet: &Packet) -> TokenStream {
         }
     }
     let res = quote! {
-        fn write_to(self, buf: &mut BytesMut) {
-            let version = VERSION;
+        fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
             #(#statements)*
         }
     };
@@ -289,8 +325,7 @@ fn generate_packet_read_from_fn(packet: &Packet, analysis: &PacketAnalysis) -> T
     };
 
     let res = quote! {
-        fn read_from(buf: &mut Bytes) -> anyhow::Result<DynPacket> {
-            let version = VERSION;
+        fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<DynPacket> {
             #(#statements )*
 
             let packet = #packet_name #type_parameter {
@@ -351,11 +386,11 @@ fn generate_struct_field_read_from(
         let repr_var = ident(format!("{}_repr", field.name));
 
         quote! {
-            let #fname = #typename::<P>::read_from(buf, #repr_var as i64)?;
+            let #fname = #typename::<P>::read_from(buf, #repr_var as i64, version)?;
         }
     } else {
         quote! {
-            let #fname = #typename::<P>::read_from(buf)?;
+            let #fname = #typename::<P>::read_from(buf, version)?;
         }
     }
 }

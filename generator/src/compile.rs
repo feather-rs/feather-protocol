@@ -1,6 +1,8 @@
 use crate::generate::ident;
 use crate::parse::{Construct, Keyword, Literal, SyntaxTree, Token};
+use crate::Version;
 use proc_macro2::{Ident, TokenStream};
+use std::collections::HashMap;
 use std::iter::Peekable;
 use std::ops::{Deref, DerefMut};
 use strum_macros::*;
@@ -11,7 +13,19 @@ pub struct PacketDefinitions {
     pub clientbound: Vec<Packet>,
     pub serverbound: Vec<Packet>,
     pub structs_and_enums: Vec<StructOrEnum>,
-    pub version: String,
+    pub version: Version,
+    pub inherits_from: Option<Version>,
+    /// If these packet definitions inherit from another version,
+    /// this map contains ID overrides for packet names. If a packet
+    /// has no entry in this map, the packet ID should be treated
+    /// as unchanged.
+    pub packet_id_overrides: HashMap<String, IdOverride>,
+}
+
+#[derive(Debug, Clone)]
+pub enum IdOverride {
+    Insert(u32),
+    Set(u32),
 }
 
 #[derive(Debug, Clone)]
@@ -144,7 +158,7 @@ impl FieldFrom {
             FieldFrom::Enum { enum_name } => {
                 let enum_name = ident(enum_name);
                 quote! {
-                    #enum_name::read_from(buf, #input_var as i64)?
+                    #enum_name::read_from(buf, #input_var as i64, version)?
                 }
             }
         }
@@ -302,17 +316,159 @@ pub enum Error {
 type Constructs<'a> = Peekable<std::slice::Iter<'a, Construct>>;
 
 pub fn compile_tree(tree: &SyntaxTree) -> anyhow::Result<PacketDefinitions> {
+    let mut constructs = tree.constructs.iter().peekable();
+
+    let version = determine_version(&mut constructs)?;
+    let inherits_from = determine_inherits(&mut constructs)?;
+
     let mut defs = PacketDefinitions {
-        version: String::from("V1_15_2"), // TODO
+        version,
+        inherits_from,
         ..Default::default()
     };
 
-    let mut constructs = tree.constructs.iter().peekable();
+    if defs.inherits_from.is_some() {
+        compile_id_overrides(&mut constructs, &mut defs.packet_id_overrides)?;
+    }
 
     compile_packet_set(&mut constructs, PacketSet::Clientbound, &mut defs)?;
     compile_packet_set(&mut constructs, PacketSet::Serverbound, &mut defs)?;
 
     Ok(defs)
+}
+
+fn determine_version(constructs: &mut Constructs) -> anyhow::Result<String> {
+    let annotation = constructs
+        .next()
+        .ok_or(Error::UnexpectedEof)?
+        .as_token()
+        .ok_or(Error::ExpectedToken)?;
+
+    if annotation != &Token::Annotation {
+        anyhow::bail!("expected annotation token; found {:?}", annotation);
+    }
+
+    let annotation_name = constructs
+        .next()
+        .ok_or(Error::UnexpectedEof)?
+        .as_identifier()
+        .ok_or(anyhow::anyhow!("expected annotation name"))?;
+
+    if annotation_name != "version" {
+        anyhow::bail!("expected version annotation; found {}", annotation_name);
+    }
+
+    let paren = constructs
+        .next()
+        .ok_or(Error::UnexpectedEof)?
+        .as_parenthesized()
+        .ok_or(anyhow::anyhow!(
+            "expected parenthesized block after annotation"
+        ))?;
+
+    let version = paren.constructs.first().ok_or(Error::UnexpectedEof)?;
+    if let Construct::Identifier(version) = version {
+        Ok(version.clone())
+    } else {
+        Err(anyhow::anyhow!(
+            "expected identifier in version clause; found {:?}",
+            version
+        ))
+    }
+}
+
+fn determine_inherits(constructs: &mut Constructs) -> anyhow::Result<Option<Version>> {
+    let annotation = constructs
+        .next()
+        .ok_or(Error::UnexpectedEof)?
+        .as_token()
+        .ok_or(Error::ExpectedToken)?;
+
+    if annotation != &Token::Annotation {
+        anyhow::bail!("expected inherits annotation");
+    }
+
+    let _ = constructs.next().ok_or(Error::UnexpectedEof)?;
+
+    let inherits = constructs
+        .next()
+        .ok_or(Error::UnexpectedEof)?
+        .as_identifier()
+        .ok_or(Error::ExpectedIdentifier)?;
+
+    if inherits != "none" {
+        Ok(Some(inherits))
+    } else {
+        Ok(None)
+    }
+}
+
+fn compile_id_overrides(
+    constructs: &mut Constructs,
+    overrides: &mut HashMap<String, IdOverride>,
+) -> anyhow::Result<()> {
+    while let Construct::Token(Token::Annotation) = constructs.peek().ok_or(Error::UnexpectedEof)? {
+        let _ = constructs.next().unwrap();
+
+        let override_kind = constructs
+            .next()
+            .ok_or(Error::UnexpectedEof)?
+            .as_identifier()
+            .ok_or(Error::ExpectedIdentifier)?;
+
+        let paren = constructs
+            .next()
+            .ok_or(Error::UnexpectedEof)?
+            .as_parenthesized()
+            .ok_or(Error::ExpectedBlock)?;
+
+        let mut constructs_inner = paren.constructs.iter().peekable();
+
+        match override_kind.as_str() {
+            "insert" => {
+                // syntax: e.g. @insert(Packet 0x32)
+                // operation: moves packet to that id, moving any other packets with a higher
+                // id than the new one up 1
+                let packet = constructs_inner
+                    .next()
+                    .ok_or(Error::UnexpectedEof)?
+                    .as_identifier()
+                    .ok_or(Error::ExpectedIdentifier)?;
+
+                let id = constructs_inner
+                    .next()
+                    .ok_or(Error::UnexpectedEof)?
+                    .as_literal()
+                    .ok_or(anyhow::anyhow!("expected packet ID for insert operation"))?
+                    .as_integer()
+                    .ok_or(anyhow::anyhow!("packet IDs must be integers"))?;
+
+                overrides.insert(packet, IdOverride::Insert(id as u32));
+            }
+            "set" => {
+                // syntax: e.g. @set(Packet 0x32)
+                // operation: moves packet to that id, not updating other packets' ids
+                let packet = constructs_inner
+                    .next()
+                    .ok_or(Error::UnexpectedEof)?
+                    .as_identifier()
+                    .ok_or(Error::ExpectedIdentifier)?;
+
+                let id = constructs_inner
+                    .next()
+                    .ok_or(Error::UnexpectedEof)?
+                    .as_literal()
+                    .ok_or(anyhow::anyhow!("expected packet ID for set operation"))?
+                    .as_integer()
+                    .ok_or(anyhow::anyhow!("packet IDs must be integers"))?;
+
+                overrides.insert(packet, IdOverride::Set(id as u32));
+            }
+            x => anyhow::bail!("invalid ID override kind {}", x),
+        }
+    }
+
+    Ok(())
 }
 
 fn compile_packet_set(
@@ -389,7 +545,6 @@ fn compile_packet_set(
                 next_packet_id += 1;
             }
             Construct::Token(Token::Annotation) => {
-                // TODO.
                 let name = constructs
                     .next()
                     .ok_or(Error::UnexpectedEof)?
@@ -417,6 +572,17 @@ fn compile_packet_set(
                     }
                     "skip" => {
                         next_packet_id += 1;
+                    }
+                    "skip_to" => {
+                        let id = content
+                            .constructs
+                            .first()
+                            .ok_or(Error::UnexpectedEof)?
+                            .as_literal()
+                            .ok_or(Error::ExpectedIdentifier)?
+                            .as_integer()
+                            .ok_or(Error::ExpectedIdentifier)?;
+                        next_packet_id = id as u32;
                     }
                     _ => return Err(Error::InvalidAnnotation),
                 }

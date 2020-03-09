@@ -1,3 +1,6 @@
+@version(V1_15_2)
+@inherits none
+
 clientbound {
     SpawnObject {
         varint entity;
