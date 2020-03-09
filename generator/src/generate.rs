@@ -6,7 +6,7 @@ use crate::integrate::IntegrationData;
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::quote;
 
-mod packet;
+pub mod packet;
 
 pub fn generate_packet_code(
     defs: &PacketDefinitions,
@@ -348,7 +348,7 @@ fn write_fn_ident(field_name: &str, ty: &FieldType) -> TokenStream {
     }
 }
 
-fn actual_field_type(field: &StructField) -> FieldType {
+pub fn actual_field_type(field: &StructField) -> FieldType {
     field
         .ty_from
         .as_ref()
@@ -356,7 +356,7 @@ fn actual_field_type(field: &StructField) -> FieldType {
         .unwrap_or(field.ty.clone())
 }
 
-fn tokenize_field_type(ty: &FieldType) -> TokenStream {
+pub fn tokenize_field_type(ty: &FieldType) -> TokenStream {
     match ty {
         FieldType::Byte => quote! { i8 },
         FieldType::Short => quote! { i16 },

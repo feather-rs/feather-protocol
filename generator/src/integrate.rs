@@ -22,12 +22,17 @@ pub struct IntegrationData {
     /// the version in the tuple stores which version the mapped ID applies to,
     /// which may differ from the packet identifier's version.
     pub packet_id_overrides: HashMap<PacketIdentifier, Vec<(Version, u32)>>,
+    /// Mapping from packet identifiers to the versions which this packet version
+    /// is used for.
+    pub packet_versions: HashMap<PacketIdentifier, Vec<Version>>,
 }
 
 pub fn integrate(packet_definitions: &[PacketDefinitions]) -> anyhow::Result<IntegrationData> {
     let mut data = IntegrationData::default();
 
     apply_id_overrides(packet_definitions, &mut data);
+
+    find_packet_versions(packet_definitions, &mut data);
 
     Ok(data)
 }
@@ -106,4 +111,69 @@ fn determine_packet_ids_for(
     }
 
     ids
+}
+
+fn find_packet_versions(defs: &[PacketDefinitions], data: &mut IntegrationData) {
+    for def in defs {
+        let mut packets = def.clientbound.iter().chain(def.serverbound.iter());
+
+        for packet in packets.by_ref() {
+            let identifier = PacketIdentifier {
+                name: packet.name.clone(),
+                version: def.version.clone(),
+            };
+
+            data.packet_versions
+                .entry(identifier)
+                .or_default()
+                .push(def.version.clone());
+        }
+        packets = def.clientbound.iter().chain(def.serverbound.iter());
+
+        if let Some(ref inherits) = def.inherits_from {
+            for identifier in trace_inherits(inherits, defs) {
+                // don't add if the packet is overridden here
+                if packets
+                    .by_ref()
+                    .any(|packet| packet.name == identifier.name)
+                {
+                    continue;
+                }
+                packets = def.clientbound.iter().chain(def.serverbound.iter());
+
+                data.packet_versions
+                    .entry(identifier)
+                    .or_default()
+                    .push(def.version.clone());
+            }
+        }
+    }
+}
+
+fn trace_inherits(inherits: &Version, defs: &[PacketDefinitions]) -> Vec<PacketIdentifier> {
+    let def = defs
+        .iter()
+        .find(|d| &d.version == inherits)
+        .expect("no matching version");
+
+    let mut res = vec![];
+
+    if let Some(ref inherits) = def.inherits_from {
+        res.append(&mut trace_inherits(inherits, defs));
+    }
+
+    for packet in def
+        .clientbound
+        .iter()
+        .chain(def.serverbound.iter())
+        .filter(|packet| packet.manual.is_none())
+    {
+        let identifier = PacketIdentifier {
+            name: packet.name.clone(),
+            version: inherits.clone(),
+        };
+        res.push(identifier);
+    }
+
+    res
 }

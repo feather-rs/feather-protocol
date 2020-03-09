@@ -62,7 +62,7 @@ pub struct EnumVariant {
     pub repr: i64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct StructField {
     pub name: String,
     pub ty: FieldType,
@@ -79,7 +79,7 @@ pub struct Packet {
     pub manual: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct PacketField {
     pub inner: StructField,
     pub value_from: Option<ValueFrom>,
@@ -99,7 +99,7 @@ impl DerefMut for PacketField {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum FieldFrom {
     BlockId,
     BlockType,
@@ -176,7 +176,7 @@ impl FieldFrom {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum ValueFrom {
     ArrayLength { field: String },
     EnumRepr { field: String },
@@ -202,7 +202,7 @@ impl ValueFrom {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum FieldType {
     Byte,
     Short,

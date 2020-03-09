@@ -12,6 +12,7 @@ mod compile;
 mod generate;
 mod integrate;
 mod parse;
+mod universalize;
 
 pub async fn compile_def(input_dir: &str, output_dir: &str) -> anyhow::Result<()> {
     // Compile each version definition file
@@ -43,8 +44,8 @@ pub async fn compile_def(input_dir: &str, output_dir: &str) -> anyhow::Result<()
     )?;
 
     // Generate code for each version
-    for (defs, input_file) in packet_definitions {
-        let code = generate::generate_packet_code(&defs, &input_file, &integration)?;
+    for (defs, input_file) in &packet_definitions {
+        let code = generate::generate_packet_code(defs, input_file.as_str(), &integration)?;
 
         let mut path = PathBuf::from_str(output_dir)?;
         path.push(format!("{}.rs", defs.version.to_lowercase()));
@@ -61,6 +62,26 @@ pub async fn compile_def(input_dir: &str, output_dir: &str) -> anyhow::Result<()
             .output()
             .expect("running rustfmt failed");
     }
+
+    // Universalize
+    let path = format!("{}/send.rs", output_dir);
+    let universal = universalize::universalize(
+        &packet_definitions
+            .iter()
+            .cloned()
+            .map(|(def, _)| def)
+            .collect::<Vec<_>>(),
+        &integration,
+    )?;
+    let mut file = File::create(&path).await?;
+
+    file.write_all(universal.as_bytes()).await?;
+    file.flush().await?;
+
+    Command::new("rustfmt")
+        .arg(&path)
+        .output()
+        .expect("running rustfmt failed");
 
     Ok(())
 }

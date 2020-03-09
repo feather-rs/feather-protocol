@@ -504,7 +504,7 @@ fn find_array_length_field<'a>(
     }
 }
 
-fn packet_needs_type_parameter(packet: &Packet) -> bool {
+pub fn packet_needs_type_parameter(packet: &Packet) -> bool {
     packet.fields.iter().any(|field| {
         if let Some(_) = field.ty_from {
             return true;
