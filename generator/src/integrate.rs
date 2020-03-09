@@ -33,62 +33,77 @@ pub fn integrate(packet_definitions: &[PacketDefinitions]) -> anyhow::Result<Int
 }
 
 fn apply_id_overrides(packet_definitions: &[PacketDefinitions], data: &mut IntegrationData) {
-    // iterate over id overrides in packet definitions; apply to the integration data
-    packet_definitions
-        .iter()
-        .filter(|def| def.inherits_from.is_some())
-        .map(|def| {
-            (
-                def,
-                &def.packet_id_overrides,
-                def.inherits_from.clone().unwrap(),
-                def.version.clone(),
-            )
-        })
-        .for_each(|(def, overrides, inherits, version)| {
-            for (packet, over) in overrides {
-                let identifier = PacketIdentifier {
-                    name: packet.clone(),
-                    version: inherits.clone(),
-                };
-                match over {
-                    IdOverride::Set(id) => {
-                        data.packet_id_overrides
-                            .entry(identifier)
-                            .or_default()
-                            .push((version.clone(), *id));
-                    }
-                    IdOverride::Insert(id) => {
-                        // apply override to each packet in this version definition with an id >= `id`
-                        data.packet_id_overrides
-                            .entry(identifier)
-                            .or_default()
-                            .push((version.clone(), *id));
-                        def.serverbound
-                            .iter()
-                            .chain(def.clientbound.iter())
-                            .filter(|packet| packet.id >= *id)
-                            .filter(|packet| {
-                                // check that version doesn't override the packet
-                                def.clientbound
-                                    .iter()
-                                    .chain(def.serverbound.iter())
-                                    .map(|p| &p.name)
-                                    .find(|name| *name == &packet.name)
-                                    .is_none()
-                            })
-                            .for_each(|packet| {
-                                let identifier = PacketIdentifier {
-                                    name: packet.name.clone(),
-                                    version: inherits.clone(),
-                                };
-                                data.packet_id_overrides
-                                    .entry(identifier)
-                                    .or_default()
-                                    .push((version.clone(), packet.id + 1));
-                            });
-                    }
-                }
+    for def in packet_definitions {
+        let ids = determine_packet_ids_for(def, packet_definitions);
+
+        if def.inherits_from.is_some() {
+            for (identifier, id) in ids.iter() {
+                data.packet_id_overrides
+                    .entry(identifier.clone())
+                    .or_default()
+                    .push((def.version.clone(), *id));
             }
-        });
+        }
+    }
+}
+
+fn determine_packet_ids_for(
+    def: &PacketDefinitions,
+    defs: &[PacketDefinitions],
+) -> HashMap<PacketIdentifier, u32> {
+    let mut ids = if let Some(ref inherits) = def.inherits_from {
+        determine_packet_ids_for(defs.iter().find(|d| &d.version == inherits).unwrap(), defs)
+    } else {
+        let mut ids = HashMap::new();
+        for packet in def.serverbound.iter().chain(def.clientbound.iter()) {
+            ids.insert(
+                PacketIdentifier {
+                    name: packet.name.clone(),
+                    version: def.version.clone(),
+                },
+                packet.id,
+            );
+        }
+        ids
+    };
+
+    // apply overrides
+    for (packet_name, over) in def.packet_id_overrides.iter() {
+        let identifier = ids
+            .keys()
+            .find(|identifier| &identifier.name == packet_name)
+            .unwrap()
+            .clone();
+        let old_id = ids[&identifier];
+
+        match over {
+            IdOverride::Set(id) => {
+                ids.insert(identifier, *id);
+            }
+            IdOverride::Insert(id) => {
+                let mut changes = vec![];
+                for (other_identifier, other_id) in ids.iter().filter(|(_, i)| **i >= *id) {
+                    changes.push((other_identifier.clone(), *other_id + 1));
+                }
+
+                changes.drain(..).for_each(|(key, value)| {
+                    ids.insert(key, value);
+                });
+
+                for (other_identifier, other_id) in
+                    ids.iter().filter(|(_, i)| **i <= *id && **i > old_id)
+                {
+                    changes.push((other_identifier.clone(), *other_id - 1));
+                }
+
+                changes.drain(..).for_each(|(key, value)| {
+                    ids.insert(key, value);
+                });
+
+                ids.insert(identifier, *id);
+            }
+        }
+    }
+
+    ids
 }

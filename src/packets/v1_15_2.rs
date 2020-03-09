@@ -795,6 +795,9 @@ impl Packet for SpawnObject {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 0u32,
+            ProtocolVersion::V1_15_1 => 0u32,
+            ProtocolVersion::V1_14_4 => 0u32,
+            ProtocolVersion::V1_15_0 => 0u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -883,6 +886,9 @@ impl Packet for SpawnExperienceOrb {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 1u32,
+            ProtocolVersion::V1_15_1 => 1u32,
+            ProtocolVersion::V1_14_4 => 1u32,
+            ProtocolVersion::V1_15_0 => 1u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -943,6 +949,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 2u32,
+            ProtocolVersion::V1_15_1 => 2u32,
+            ProtocolVersion::V1_14_4 => 2u32,
+            ProtocolVersion::V1_15_0 => 2u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1003,6 +1012,9 @@ impl Packet for SpawnMob {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 3u32,
+            ProtocolVersion::V1_15_1 => 3u32,
+            ProtocolVersion::V1_14_4 => 3u32,
+            ProtocolVersion::V1_15_0 => 3u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1094,6 +1106,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 4u32,
+            ProtocolVersion::V1_15_1 => 4u32,
+            ProtocolVersion::V1_14_4 => 4u32,
+            ProtocolVersion::V1_15_0 => 4u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1164,6 +1179,9 @@ impl Packet for SpawnPlayer {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 5u32,
+            ProtocolVersion::V1_15_1 => 5u32,
+            ProtocolVersion::V1_14_4 => 5u32,
+            ProtocolVersion::V1_15_0 => 5u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1232,6 +1250,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 6u32,
+            ProtocolVersion::V1_15_1 => 6u32,
+            ProtocolVersion::V1_14_4 => 6u32,
+            ProtocolVersion::V1_15_0 => 6u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1285,6 +1306,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 7u32,
+            ProtocolVersion::V1_15_1 => 7u32,
+            ProtocolVersion::V1_14_4 => 7u32,
+            ProtocolVersion::V1_15_0 => 7u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1347,6 +1371,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 8u32,
+            ProtocolVersion::V1_15_1 => 8u32,
+            ProtocolVersion::V1_14_4 => 92u32,
+            ProtocolVersion::V1_15_0 => 8u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1411,6 +1438,9 @@ impl Packet for BlockBreakAnimation {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 9u32,
+            ProtocolVersion::V1_15_1 => 9u32,
+            ProtocolVersion::V1_14_4 => 8u32,
+            ProtocolVersion::V1_15_0 => 9u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1464,6 +1494,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 10u32,
+            ProtocolVersion::V1_15_1 => 10u32,
+            ProtocolVersion::V1_14_4 => 9u32,
+            ProtocolVersion::V1_15_0 => 10u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1522,6 +1555,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 11u32,
+            ProtocolVersion::V1_15_1 => 11u32,
+            ProtocolVersion::V1_14_4 => 10u32,
+            ProtocolVersion::V1_15_0 => 11u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1586,6 +1622,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 12u32,
+            ProtocolVersion::V1_15_1 => 12u32,
+            ProtocolVersion::V1_14_4 => 11u32,
+            ProtocolVersion::V1_15_0 => 12u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1639,6 +1678,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 13u32,
+            ProtocolVersion::V1_15_1 => 13u32,
+            ProtocolVersion::V1_14_4 => 12u32,
+            ProtocolVersion::V1_15_0 => 13u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1690,6 +1732,9 @@ impl Packet for ServerDifficulty {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 14u32,
+            ProtocolVersion::V1_15_1 => 14u32,
+            ProtocolVersion::V1_14_4 => 13u32,
+            ProtocolVersion::V1_15_0 => 14u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1738,6 +1783,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 15u32,
+            ProtocolVersion::V1_15_1 => 15u32,
+            ProtocolVersion::V1_14_4 => 14u32,
+            ProtocolVersion::V1_15_0 => 15u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1792,6 +1840,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 16u32,
+            ProtocolVersion::V1_15_1 => 16u32,
+            ProtocolVersion::V1_14_4 => 15u32,
+            ProtocolVersion::V1_15_0 => 16u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1859,6 +1910,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 17u32,
+            ProtocolVersion::V1_15_1 => 17u32,
+            ProtocolVersion::V1_14_4 => 16u32,
+            ProtocolVersion::V1_15_0 => 17u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1925,6 +1979,9 @@ impl Packet for DeclareCommands {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 18u32,
+            ProtocolVersion::V1_15_1 => 18u32,
+            ProtocolVersion::V1_14_4 => 17u32,
+            ProtocolVersion::V1_15_0 => 18u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -1975,6 +2032,9 @@ impl Packet for WindowConfirmation {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 19u32,
+            ProtocolVersion::V1_15_1 => 19u32,
+            ProtocolVersion::V1_14_4 => 18u32,
+            ProtocolVersion::V1_15_0 => 19u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2023,6 +2083,9 @@ impl Packet for CloseWindow {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 20u32,
+            ProtocolVersion::V1_15_1 => 20u32,
+            ProtocolVersion::V1_14_4 => 19u32,
+            ProtocolVersion::V1_15_0 => 20u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2062,6 +2125,9 @@ impl Packet for WindowItems {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 21u32,
+            ProtocolVersion::V1_15_1 => 21u32,
+            ProtocolVersion::V1_14_4 => 20u32,
+            ProtocolVersion::V1_15_0 => 21u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2112,6 +2178,9 @@ impl Packet for WindowProperty {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 22u32,
+            ProtocolVersion::V1_15_1 => 22u32,
+            ProtocolVersion::V1_14_4 => 21u32,
+            ProtocolVersion::V1_15_0 => 22u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2162,6 +2231,9 @@ impl Packet for SetSlot {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 23u32,
+            ProtocolVersion::V1_15_1 => 23u32,
+            ProtocolVersion::V1_14_4 => 22u32,
+            ProtocolVersion::V1_15_0 => 23u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2214,6 +2286,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 24u32,
+            ProtocolVersion::V1_15_1 => 24u32,
+            ProtocolVersion::V1_14_4 => 23u32,
+            ProtocolVersion::V1_15_0 => 24u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2267,6 +2342,9 @@ impl Packet for PluginMessage {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 25u32,
+            ProtocolVersion::V1_15_1 => 25u32,
+            ProtocolVersion::V1_14_4 => 24u32,
+            ProtocolVersion::V1_15_0 => 25u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2318,6 +2396,9 @@ impl Packet for NamedSoundEffect {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 26u32,
+            ProtocolVersion::V1_15_1 => 26u32,
+            ProtocolVersion::V1_14_4 => 25u32,
+            ProtocolVersion::V1_15_0 => 26u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2382,6 +2463,9 @@ impl Packet for Disconnect {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 27u32,
+            ProtocolVersion::V1_15_1 => 27u32,
+            ProtocolVersion::V1_14_4 => 26u32,
+            ProtocolVersion::V1_15_0 => 27u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2421,6 +2505,9 @@ impl Packet for EntityStatus {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 28u32,
+            ProtocolVersion::V1_15_1 => 28u32,
+            ProtocolVersion::V1_14_4 => 27u32,
+            ProtocolVersion::V1_15_0 => 28u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2472,6 +2559,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 29u32,
+            ProtocolVersion::V1_15_1 => 29u32,
+            ProtocolVersion::V1_14_4 => 28u32,
+            ProtocolVersion::V1_15_0 => 29u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2554,6 +2644,9 @@ impl Packet for UnloadChunk {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 30u32,
+            ProtocolVersion::V1_15_1 => 30u32,
+            ProtocolVersion::V1_14_4 => 29u32,
+            ProtocolVersion::V1_15_0 => 30u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2599,6 +2692,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 31u32,
+            ProtocolVersion::V1_15_1 => 31u32,
+            ProtocolVersion::V1_14_4 => 30u32,
+            ProtocolVersion::V1_15_0 => 31u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2650,6 +2746,9 @@ impl Packet for OpenHorseWindow {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 32u32,
+            ProtocolVersion::V1_15_1 => 32u32,
+            ProtocolVersion::V1_14_4 => 31u32,
+            ProtocolVersion::V1_15_0 => 32u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2698,6 +2797,9 @@ impl Packet for KeepAlive {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 33u32,
+            ProtocolVersion::V1_15_1 => 33u32,
+            ProtocolVersion::V1_14_4 => 32u32,
+            ProtocolVersion::V1_15_0 => 33u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2739,6 +2841,9 @@ impl Packet for Effect {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 35u32,
+            ProtocolVersion::V1_15_1 => 35u32,
+            ProtocolVersion::V1_14_4 => 34u32,
+            ProtocolVersion::V1_15_0 => 35u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2799,6 +2904,9 @@ impl Packet for JoinGame {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 38u32,
+            ProtocolVersion::V1_15_1 => 38u32,
+            ProtocolVersion::V1_14_4 => 37u32,
+            ProtocolVersion::V1_15_0 => 38u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2875,6 +2983,9 @@ impl Packet for EntityPosition {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 41u32,
+            ProtocolVersion::V1_15_1 => 41u32,
+            ProtocolVersion::V1_14_4 => 40u32,
+            ProtocolVersion::V1_15_0 => 41u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -2937,6 +3048,9 @@ impl Packet for EntityPositionAndRotation {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 42u32,
+            ProtocolVersion::V1_15_1 => 42u32,
+            ProtocolVersion::V1_14_4 => 41u32,
+            ProtocolVersion::V1_15_0 => 42u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -3004,6 +3118,9 @@ impl Packet for EntityRotation {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 43u32,
+            ProtocolVersion::V1_15_1 => 43u32,
+            ProtocolVersion::V1_14_4 => 42u32,
+            ProtocolVersion::V1_15_0 => 43u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -3056,6 +3173,9 @@ impl Packet for EntityMovement {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 44u32,
+            ProtocolVersion::V1_15_1 => 44u32,
+            ProtocolVersion::V1_14_4 => 43u32,
+            ProtocolVersion::V1_15_0 => 44u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -3098,6 +3218,9 @@ impl Packet for VehicleMove {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 45u32,
+            ProtocolVersion::V1_15_1 => 45u32,
+            ProtocolVersion::V1_14_4 => 44u32,
+            ProtocolVersion::V1_15_0 => 45u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -3154,6 +3277,9 @@ impl Packet for OpenBook {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 46u32,
+            ProtocolVersion::V1_15_1 => 46u32,
+            ProtocolVersion::V1_14_4 => 45u32,
+            ProtocolVersion::V1_15_0 => 46u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -3194,6 +3320,9 @@ impl Packet for OpenWindow {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 47u32,
+            ProtocolVersion::V1_15_1 => 47u32,
+            ProtocolVersion::V1_14_4 => 46u32,
+            ProtocolVersion::V1_15_0 => 47u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -3242,6 +3371,9 @@ impl Packet for OpenSignEditor {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 48u32,
+            ProtocolVersion::V1_15_1 => 48u32,
+            ProtocolVersion::V1_14_4 => 47u32,
+            ProtocolVersion::V1_15_0 => 48u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -3281,6 +3413,9 @@ impl Packet for CraftRecipeResponse {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 49u32,
+            ProtocolVersion::V1_15_1 => 49u32,
+            ProtocolVersion::V1_14_4 => 48u32,
+            ProtocolVersion::V1_15_0 => 49u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -3324,6 +3459,9 @@ impl Packet for PlayerAbilities {
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 50u32,
+            ProtocolVersion::V1_15_1 => 50u32,
+            ProtocolVersion::V1_14_4 => 49u32,
+            ProtocolVersion::V1_15_0 => 50u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,
@@ -3375,6 +3513,9 @@ where
     fn id(&self, version: ProtocolVersion) -> u32 {
         match version {
             ProtocolVersion::V1_15_2 => 51u32,
+            ProtocolVersion::V1_15_1 => 51u32,
+            ProtocolVersion::V1_14_4 => 50u32,
+            ProtocolVersion::V1_15_0 => 51u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
                 x,

@@ -17,5 +17,7 @@ pub use types::{BlockPosition, BytesExt, BytesMutExt, Node, Slot};
 pub enum ProtocolVersion {
     V1_13_2,
     V1_14_4,
+    V1_15_0,
+    V1_15_1,
     V1_15_2,
 }

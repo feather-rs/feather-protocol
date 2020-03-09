@@ -1,0 +1,5 @@
+@version(V1_15_0)
+@inherits V1_15_1
+
+clientbound {}
+serverbound {}

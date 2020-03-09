@@ -1,5 +1,7 @@
 @version(V1_14_4)
-@inherits V1_15_2
+@inherits V1_15_0
+
+@insert(AcknowledgePlayerDigging 92)
 
 clientbound {
     @skip_to(37)
@@ -36,5 +38,25 @@ clientbound {
     @skip_to(33)
     @manual("chunk_data.1.14.4.rs")
     ChunkData {}
+
+    @skip_to(9)
+    UpdateBlockEntity {
+            position os;
+            ubyte(enum Action {
+                SetMobSpawnerData = 1,
+                SetCommandBlockText = 2,
+                UpdateBeacon = 3,
+                SetMobHead = 4,
+                Conduit = 5,
+                UpdateBanner = 6,
+                SetStructureData = 7,
+                SetGatewayDestination = 8,
+                SetSignText = 9,
+                DeclareBed = 11,
+                SetJigsawBlockData = 12,
+                SetCampfireItems = 13,
+            }) action;
+            nbt data;
+        }
 }
 serverbound {}
