@@ -22,6 +22,16 @@ pub struct PacketDefinitions {
     pub packet_id_overrides: HashMap<String, IdOverride>,
 }
 
+impl PacketDefinitions {
+    pub fn is_defined(&self, packet_name: &str) -> bool {
+        self.clientbound
+            .iter()
+            .chain(self.serverbound.iter())
+            .find(|packet| &packet.name == packet_name)
+            .is_some()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum IdOverride {
     Insert(u32),

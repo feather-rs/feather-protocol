@@ -43,6 +43,11 @@ fn apply_id_overrides(packet_definitions: &[PacketDefinitions], data: &mut Integ
 
         if def.inherits_from.is_some() {
             for (identifier, id) in ids.iter() {
+                // don't apply override if this packet is redefined
+                if def.is_defined(&identifier.name) {
+                    continue;
+                }
+
                 data.packet_id_overrides
                     .entry(identifier.clone())
                     .or_default()

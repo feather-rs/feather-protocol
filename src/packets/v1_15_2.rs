@@ -1495,7 +1495,6 @@ where
         match version {
             ProtocolVersion::V1_15_2 => 10u32,
             ProtocolVersion::V1_15_1 => 10u32,
-            ProtocolVersion::V1_14_4 => 9u32,
             ProtocolVersion::V1_15_0 => 10u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
@@ -2693,7 +2692,6 @@ where
         match version {
             ProtocolVersion::V1_15_2 => 31u32,
             ProtocolVersion::V1_15_1 => 31u32,
-            ProtocolVersion::V1_14_4 => 30u32,
             ProtocolVersion::V1_15_0 => 31u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
@@ -2905,7 +2903,6 @@ impl Packet for JoinGame {
         match version {
             ProtocolVersion::V1_15_2 => 38u32,
             ProtocolVersion::V1_15_1 => 38u32,
-            ProtocolVersion::V1_14_4 => 37u32,
             ProtocolVersion::V1_15_0 => 38u32,
             x => panic!(
                 "unsupported protocol version {:?} for packet {} defined for version {:?}",
