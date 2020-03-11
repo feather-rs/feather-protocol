@@ -145,11 +145,17 @@ fn parse_types(types: &Map<String, Value>, prot: &mut Protocol) -> anyhow::Resul
         match parse_type(&name, &value, prot) {
             Ok(_) => (),
             Err(e) => {
-                if let Some(_) = e.downcast_ref::<MissingTypeError>() {
-                    queue.push_back((name, value));
-                } else {
-                    bail!(e);
+                // if there is a missing type which we might not yet have
+                // parsed, and there are more types left to parse,
+                // then push this type onto the back of the queue so
+                // it will be parsed after its dependencies are parsed.
+                if !queue.is_empty() {
+                    if let Some(_) = e.downcast_ref::<MissingTypeError>() {
+                        queue.push_back((name, value));
+                        continue;
+                    }
                 }
+                bail!(e);
             }
         }
     }
