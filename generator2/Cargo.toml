@@ -1,0 +1,13 @@
+[package]
+name = "feather-protocol-generator"
+version = "0.1.0"
+authors = ["caelunshun <caelunshun@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0"
+thiserror = "1.0"
+serde = "1.0"
+serde_json = { version = "1.0", features = ["preserve_order"] }
+heck = "0.3"
+indexmap = "1.3"
