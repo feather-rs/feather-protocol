@@ -1,7 +1,7 @@
 //! Parses a protocol JSON file, outputting a `Protocol`.
 use anyhow::{anyhow, bail};
+use heck::{CamelCase, SnakeCase};
 use indexmap::map::IndexMap;
-use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 use std::collections::VecDeque;
@@ -12,6 +12,11 @@ pub type PacketName = String;
 pub type PacketId = u32;
 pub type FieldName = String;
 pub type TypeName = String;
+
+static SKIP_PACKETS: phf::Set<&'static str> = phf::phf_set! {
+    "packet_tags",
+    "tags",
+};
 
 /// Defines all packets and field types for a protocol version.
 #[derive(Debug, Clone, Default)]
@@ -38,6 +43,9 @@ pub struct Packet {
     ///
     /// Keys in this map are the field names; values are the field types.
     pub fields: IndexMap<FieldName, FieldType>,
+
+    pub category: PacketCategory,
+    pub direction: PacketDirection,
 }
 
 /// A field's type.
@@ -53,6 +61,9 @@ pub enum FieldType {
     F32,
     F64,
     Bool,
+    Mapper {
+        mappings: HashMap<u32, String>,
+    },
     Pstring {
         count_type: Box<FieldType>,
     },
@@ -81,7 +92,7 @@ pub enum FieldType {
     },
     Void,
     Array {
-        count_type: Box<FieldType>,
+        count_type: Box<ArrayCountType>,
         of: Box<FieldType>,
     },
     RestBuffer,
@@ -93,6 +104,54 @@ pub enum FieldType {
     Custom {
         name: TypeName,
     },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum ArrayCountType {
+    /// Dynamic array with a certain field
+    /// type denoting its length.
+    Dynamic(FieldType),
+    /// Fixed capacity array.
+    Fixed(usize),
+    /// Dynamic array with a certain field in this packet
+    /// denoting its length.
+    DynamicFromField(FieldName),
+}
+
+/// Category of a packet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PacketCategory {
+    Handshake,
+    Status,
+    Login,
+    Play,
+}
+
+impl PacketCategory {
+    pub fn json_key(&self) -> &'static str {
+        match self {
+            PacketCategory::Handshake => "handshake",
+            PacketCategory::Status => "status",
+            PacketCategory::Login => "login",
+            PacketCategory::Play => "play",
+        }
+    }
+}
+
+/// Direction of a packet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PacketDirection {
+    ToServer,
+    ToClient,
+}
+
+impl PacketDirection {
+    pub fn json_key(&self) -> &'static str {
+        match self {
+            PacketDirection::ToServer => "toServer",
+            PacketDirection::ToClient => "toClient",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -128,6 +187,8 @@ pub fn parse(input: &str) -> anyhow::Result<Protocol> {
         .ok_or(anyhow!("expected type definitions to be an object"))?;
 
     parse_types(types, &mut prot)?;
+
+    parse_packets(&input, &mut prot)?;
 
     Ok(prot)
 }
@@ -225,6 +286,7 @@ fn parse_field_type(
         "restBuffer" => FieldType::RestBuffer,
         "nbt" => FieldType::Nbt,
         "optionalNbt" => FieldType::OptionalNbt,
+        "mapper" => parse_mapper_type(&value[1..])?,
         name => {
             // try to find the type defined within the protocol;
             // otherwise, return an error, since the type is not defined
@@ -261,13 +323,9 @@ fn parse_pstring_type(value: &[Value], prot: &Protocol) -> anyhow::Result<FieldT
 }
 
 fn parse_option_type(value: &[Value], prot: &Protocol) -> anyhow::Result<FieldType> {
-    let of = value
-        .get(0)
-        .ok_or(anyhow!("missing option metadata"))?
-        .as_str()
-        .ok_or(anyhow!("option metadata must be a string"))?;
+    let of = value.get(0).ok_or(anyhow!("missing option metadata"))?;
 
-    let of = parse_field_type("option", &[Value::String(of.to_owned())], prot)?;
+    let of = parse_arbitrary_type(of, "option", prot)?;
 
     Ok(FieldType::Option { of: Box::new(of) })
 }
@@ -401,6 +459,11 @@ fn parse_switch_type(value: &[Value], prot: &Protocol) -> anyhow::Result<FieldTy
     for (field_case, field) in fields {
         let field_case = Literal::from_str(field_case);
 
+        if let Some(s) = field.as_str() {
+            // cheat special case for the mappings packet, which we don't need.
+            continue;
+        }
+
         let field_ty = parse_arbitrary_type(field, "switch", prot)?;
 
         fields_map.insert(field_case, field_ty);
@@ -421,9 +484,16 @@ fn parse_array_type(value: &[Value], prot: &Protocol) -> anyhow::Result<FieldTyp
 
     let count_type = value
         .get("countType")
-        .ok_or(anyhow!("array metadata missing countType"))?;
+        .or(value.get("count"))
+        .ok_or(anyhow!("array missing `count`/`countType` field"))?;
 
-    let count_type = parse_arbitrary_type(count_type, "array", prot)?;
+    let count_type = if let Some(fixed) = count_type.as_i64() {
+        ArrayCountType::Fixed(fixed as usize)
+    } else if let Some(fixed_from_field) = count_type.as_str() {
+        ArrayCountType::DynamicFromField(fixed_from_field.to_owned())
+    } else {
+        ArrayCountType::Dynamic(parse_arbitrary_type(count_type, "array", prot)?)
+    };
 
     let of = value
         .get("type")
@@ -435,6 +505,34 @@ fn parse_array_type(value: &[Value], prot: &Protocol) -> anyhow::Result<FieldTyp
         count_type: Box::new(count_type),
         of: Box::new(of),
     })
+}
+
+fn parse_mapper_type(value: &[Value]) -> anyhow::Result<FieldType> {
+    let value = value
+        .get(0)
+        .ok_or(anyhow!("mapper missing metadata"))?
+        .as_object()
+        .ok_or(anyhow!("mapper metadata must be an object"))?;
+
+    let mappings = value
+        .get("mappings")
+        .ok_or(anyhow!("mapper metadata missing `mappings` field"))?
+        .as_object()
+        .ok_or(anyhow!(
+            "mapper metadata `mappings` field must be an object"
+        ))?;
+
+    let mut result = HashMap::with_capacity(mappings.len());
+
+    for (x, y) in mappings {
+        let x = u32::from_str_radix(&x[2..], 16)?; // skip "0x" characters
+
+        let y = y.as_str().ok_or(anyhow!("mapping map u32 to string"))?;
+
+        result.insert(x, y.to_owned());
+    }
+
+    Ok(FieldType::Mapper { mappings: result })
 }
 
 fn parse_arbitrary_type(
@@ -454,4 +552,163 @@ fn parse_arbitrary_type(
     };
 
     Ok(ty)
+}
+
+fn parse_packets(input: &Map<String, Value>, prot: &mut Protocol) -> anyhow::Result<()> {
+    parse_all_packets(input, prot)?;
+    find_packet_ids(prot)?;
+
+    Ok(())
+}
+
+fn parse_all_packets(input: &Map<String, Value>, prot: &mut Protocol) -> anyhow::Result<()> {
+    let categories = [
+        PacketCategory::Handshake,
+        PacketCategory::Play,
+        PacketCategory::Login,
+        PacketCategory::Status,
+    ];
+
+    let directions = [PacketDirection::ToServer, PacketDirection::ToClient];
+
+    for category in &categories {
+        let map = match input.get(category.json_key()) {
+            Some(v) => v,
+            None => continue,
+        }
+        .as_object()
+        .ok_or(anyhow!(
+            "packet category '{:?}' must be an object",
+            category
+        ))?;
+
+        for direction in &directions {
+            let packets = match map.get(direction.json_key()) {
+                Some(v) => v,
+                None => continue,
+            }
+            .as_object()
+            .ok_or(anyhow!(
+                "packets under '{:?}'/'{:?} must be an object",
+                category,
+                direction
+            ))?;
+
+            let packets = packets
+                .get("types")
+                .ok_or(anyhow!(
+                    "packets under '{:?}'/'{:?}' must have a types object",
+                    category,
+                    direction
+                ))?
+                .as_object()
+                .ok_or(anyhow!(
+                    "packet types under '{:?}'/'{:?}' must be an object",
+                    category,
+                    direction
+                ))?;
+
+            for (identifier, value) in packets {
+                if SKIP_PACKETS.contains(identifier.as_str()) {
+                    println!("WARN: skipping unsupported packet {}", identifier);
+                    continue;
+                }
+
+                let identifier = packet_identifier(*category, *direction, identifier);
+
+                let ty = parse_arbitrary_type(value, &identifier, prot)?;
+
+                let fields = match ty {
+                    FieldType::Container { fields } => fields,
+                    x => {
+                        println!("WARN: skipping unsupported packet {}", identifier);
+                        continue;
+                    }
+                };
+
+                let name = make_packet_name(&identifier);
+
+                let packet = Packet {
+                    identifier: identifier.clone(),
+                    name,
+                    id: 0,
+                    fields,
+                    category: *category,
+                    direction: *direction,
+                };
+                prot.packets.insert(identifier, packet);
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn find_packet_ids(prot: &mut Protocol) -> anyhow::Result<()> {
+    // packet ids are in the packet named "packet"
+    // under field "name"
+    let categories = [
+        PacketCategory::Handshake,
+        PacketCategory::Play,
+        PacketCategory::Login,
+        PacketCategory::Status,
+    ];
+
+    let directions = [PacketDirection::ToServer, PacketDirection::ToClient];
+
+    for category in categories.iter() {
+        for direction in directions.iter() {
+            let mappings_packet_identifier = packet_identifier(*category, *direction, "packet");
+
+            let packet = match prot.packets.get(&mappings_packet_identifier) {
+                Some(p) => p,
+                None => continue,
+            };
+
+            let mappings = match packet
+                .fields
+                .get("name")
+                .ok_or(anyhow!("mappings packet must have 'name' field"))?
+            {
+                FieldType::Mapper { mappings } => mappings.clone(),
+                _ => bail!("mappings packet `name` field must have mapper type"),
+            };
+
+            for (id, packet_name) in mappings {
+                let packet_name = format!("packet_{}", packet_name);
+                if SKIP_PACKETS.contains(packet_name.as_str()) {
+                    continue;
+                }
+
+                let identifier = packet_identifier(*category, *direction, &packet_name);
+
+                let packet = prot.packets.get_mut(&identifier).ok_or(anyhow!(
+                    "packet mappings reference undefined packet '{}'",
+                    packet_name
+                ))?;
+                packet.id = id;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn packet_identifier(category: PacketCategory, direction: PacketDirection, json: &str) -> String {
+    format!(
+        "{}_{}_{}",
+        category.json_key(),
+        direction.json_key().to_snake_case(),
+        json
+    )
+}
+
+fn make_packet_name(identifier: &str) -> String {
+    // strip packet_ prefix, then convert to UpperCamelCase
+    let res = identifier
+        .chars()
+        .skip("packet_".chars().count())
+        .collect::<String>();
+
+    res.to_camel_case()
 }

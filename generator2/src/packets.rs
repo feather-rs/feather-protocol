@@ -9,6 +9,7 @@
 //! * __Generation__, in which the parsed data and the integration results are used
 //! to output Rust code.
 
+mod integration;
 mod parsing;
 
 pub fn generate(
