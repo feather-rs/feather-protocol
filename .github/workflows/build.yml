@@ -1,0 +1,62 @@
+name: build
+
+on:
+  push:
+    branches: [ master, staging ]
+  pull_request:
+    branches: [ master, staging ]
+
+jobs:
+  build:
+    name: "Build and Test"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Cache target directory
+      uses: actions/cache@v1
+      env:
+        cache-name: build-target
+      with:
+        path: target
+        key: ${{ runner.os }}-build-${{ env.cache-name }} }}-${{ hashFiles('**/Cargo.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+    - name: Cache cargo registry
+      uses: actions/cache@v1
+      env:
+        cache-name: cargo-registry
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-build-${{ env.cache-name }} }}-${{ hashFiles('**/Cargo.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+    - name: Cache cargo index
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-build-${{ env.cache-name }} }}-${{ hashFiles('**/Cargo.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+                
+    - name: Build
+      run: cargo build
+      
+    - name: Run tests
+      run: cargo test
+    
+    - name: Run Clippy
+      uses: actions-rs/clippy-check@v1.0.5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        args: --all-targets -- -D warnings
+    
+    - name: Check formatting
+      run: cargo fmt -- --check
