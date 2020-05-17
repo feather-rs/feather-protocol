@@ -1,398 +1,214 @@
-use crate::compile::{
-    Enum, EnumVariant, FieldFrom, FieldType, PacketDefinitions, Struct, StructField, StructOrEnum,
+use crate::{
+    intermediate::{Direction, Field, Root, Stage, Type},
+    model::FieldType,
 };
-use crate::generate::packet::generate_packets;
-use crate::integrate::IntegrationData;
+use heck::CamelCase;
 use proc_macro2::{Ident, Span, TokenStream};
-use quote::quote;
+use quote::{quote, ToTokens};
+use std::collections::HashMap;
 
-pub mod packet;
+/// Given a protocol `Root`, generates code for that protocol.
+pub fn generate(model: &Root) -> String {
+    let types = generate_types(&model.types);
 
-pub fn generate_packet_code(
-    defs: &PacketDefinitions,
-    input_file: &str,
-    integration: &IntegrationData,
-) -> anyhow::Result<String> {
-    let structs_and_enums = generate_structs_and_enums(defs)?;
-    let packets = generate_packets(defs, input_file, integration)?;
+    let modules = generate_modules(&types, model);
 
-    let output = quote! {
-        #structs_and_enums
-        #packets
-    };
-
-    Ok(output.to_string())
+    modules.to_string()
 }
 
-fn generate_structs_and_enums(defs: &PacketDefinitions) -> anyhow::Result<TokenStream> {
-    let mut tokens = vec![];
-
-    for se in &defs.structs_and_enums {
-        match se {
-            StructOrEnum::Struct(s) => tokens.push(generate_struct(s)),
-            StructOrEnum::Enum(e) => tokens.push(generate_enum(e)),
-        }
-    }
-
-    let version = ident(&defs.version);
-
-    Ok(quote! {
-        #![allow(warnings)]
-        use bytes::{Bytes, BytesMut, Buf, BufMut};
-        use crate::{BytesExt, BytesMutExt, Provider, Error, ProtocolVersion};
-
-        #(#tokens)*
-    })
+/// Generates a mapping from type name => type definition
+/// (includes impl Readable and Writeable).
+fn generate_types<'a>(types: &[Type<'a>]) -> HashMap<&'a str, TokenStream> {
+    types
+        .iter()
+        .map(|typ| (typ.name, generate_type(typ)))
+        .collect()
 }
 
-fn generate_struct(s: &Struct) -> TokenStream {
-    dbg!(s);
-    let name = ident(&s.name);
-    let mut fields = vec![];
-    let mut write_to = vec![];
-    let mut read_from = vec![];
-    let mut field_initializers = vec![];
+fn generate_type(typ: &Type) -> TokenStream {
+    let ident = mk_ident(typ.name.to_camel_case());
 
-    for field in &s.fields {
-        let fname = ident(&field.name);
-        let ty = tokenize_field_type(&actual_field_type(field));
+    let definition = generate_type_def(typ, &ident);
+    let readable = generate_readable(typ, &ident);
 
-        fields.push(quote! {
-            pub #fname: #ty
-        });
-
-        read_from.push(read_from_statement(field));
-        let write = write_to_statement(field, true);
-
-        write_to.push(quote! { let #fname = self.#fname; #write });
-
-        field_initializers.push(quote! { #fname, })
+    quote! {
+        #definition
+        #readable
     }
+}
 
-    let res = quote! {
+fn generate_type_def(typ: &Type, ident: &Ident) -> TokenStream {
+    let fields = typ
+        .fields
+        .iter()
+        .map(|field| quote! { pub #field })
+        .collect::<Vec<_>>();
+
+    quote! {
         #[derive(Debug, Clone)]
-        pub struct #name<P: Provider> {
-            #(#fields ,)*
-            _phantom: std::marker::PhantomData<P>,
+        pub struct #ident {
+            #(#fields,)*
         }
+    }
+}
 
-        impl <P> #name<P> where P: Provider {
-            pub fn read_from(buf: &mut Bytes, version: ProtocolVersion) -> anyhow::Result<Self> {
-                #(#read_from)*
+fn generate_readable(typ: &Type, ident: &Ident) -> TokenStream {
+    let read_statements = typ
+        .fields
+        .iter()
+        .map(|field: &Field| {
+            let ident = mk_ident(field.name);
+
+            let fully_qualified = field.typ.tokens_fully_qualified();
+
+            let error_ctx = format!(
+                "Failed to read field `{}` of struct `{}`",
+                field.name, typ.name
+            );
+            quote! {
+                let #ident = #fully_qualified::read(buffer).context(#error_ctx)?;
+            }
+        })
+        .collect::<Vec<_>>();
+
+    let initializers = typ
+        .fields
+        .iter()
+        .map(|field: &Field| {
+            let ident = mk_ident(field.name);
+            quote! {
+                #ident
+            }
+        })
+        .collect::<Vec<_>>();
+
+    quote! {
+        impl Readable for #ident {
+            fn read(buffer: &mut Bytes) -> anyhow::Result<Self> where Self: Sized {
+                #(#read_statements)*
 
                 Ok(Self {
-                    #(#field_initializers)*
-                    _phantom: Default::default(),
+                    #(#initializers,)*
                 })
             }
-
-            pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
-
-                #(#write_to)*
-            }
         }
-    };
-    res
+    }
 }
 
-fn generate_enum(e: &Enum) -> TokenStream {
-    dbg!(e);
-    let name = ident(&e.name);
-    let name_str = &e.name;
+impl ToTokens for FieldType {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let t = match self {
+            FieldType::U8 => quote! { u8 },
+            FieldType::U16 => quote! { u16 },
+            FieldType::U32 => quote! { u32 },
+            FieldType::U64 => quote! { u64 },
+            FieldType::I8 => quote! { i8 },
+            FieldType::I16 => quote! { i16 },
+            FieldType::I32 => quote! { i32 },
+            FieldType::I64 => quote! { u64 },
+            FieldType::Bool => quote! { bool },
+            FieldType::Array(inner, _) => quote! { Vec<#inner> },
+            FieldType::Option(inner, _) => quote! { Option<#inner> },
+            FieldType::VarInt => quote! { VarInt },
+            FieldType::F32 => quote! { f32 },
+            FieldType::F64 => quote! { f64 },
+            FieldType::String => quote! { String },
+        };
+        tokens.extend(t);
+    }
+}
 
-    let mut defs = vec![];
-    let mut read_froms = vec![];
-    let mut write_tos = vec![];
-    let mut reprs = vec![];
+impl FieldType {
+    pub fn tokens_fully_qualified(&self) -> TokenStream {
+        match self {
+            FieldType::Array(inner, _) => {
+                let inner = inner.tokens_fully_qualified();
+                quote! { Vec::<#inner> }
+            }
+            FieldType::Option(inner, _) => {
+                let inner = inner.tokens_fully_qualified();
+                quote! { Option::<#inner> }
+            }
+            x => quote! { #x },
+        }
+    }
+}
 
-    for variant in &e.variants {
-        let (def, read_from, write_to, repr) = generate_enum_variant(e, variant);
-        defs.push(def);
-        read_froms.push(read_from);
-        write_tos.push(write_to);
-        reprs.push(repr);
+impl<'a> ToTokens for Field<'a> {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let ident = mk_ident(self.name);
+        let typ = &self.typ;
+
+        tokens.extend(quote! {
+            #ident: #typ
+        })
+    }
+}
+
+fn generate_modules<'a>(types: &HashMap<&'a str, TokenStream>, model: &'a Root) -> TokenStream {
+    // Make a module tree such that packet
+    // structs are located in module `direction::stage`.
+    let mut direction_modules = HashMap::new();
+
+    for &(direction_name, direction) in &[
+        ("clientbound", Direction::Clientbound),
+        ("serverbound", Direction::Serverbound),
+    ] {
+        let mut stage_modules = HashMap::new();
+
+        for &(stage_name, stage) in &[
+            ("login", Stage::Login),
+            ("handshake", Stage::Handshake),
+            ("status", Stage::Status),
+            ("play", Stage::Play),
+        ] {
+            // Find all packets belonging to this direction + stage.
+            let packets = model
+                .packets
+                .iter()
+                .filter(|packet| packet.stage == stage && packet.direction == direction)
+                .map(|packet| packet.strukt(model))
+                .map(|typ| types[&typ.name].clone())
+                .collect::<Vec<_>>();
+
+            stage_modules.insert(stage_name, quote! { #(#packets)* });
+        }
+        direction_modules.insert(direction_name, stage_modules);
     }
 
-    let res = quote! {
-        #[derive(Debug, Clone)]
-        pub enum #name<P: Provider> {
-            #(#defs ,)*
-            _Phantom(std::marker::PhantomData<P>),
+    // Produce code from the module tree.
+    let mut result = TokenStream::new();
+
+    for (direction, module) in direction_modules {
+        let mut contents = TokenStream::new();
+
+        for (stage, stage_module) in module {
+            let stage_ident = mk_ident(stage);
+            contents.extend(quote! {
+                pub mod #stage_ident {
+                    use super::*;
+                    #stage_module
+                }
+            });
         }
 
-        impl <P> #name<P> where P: Provider {
-            pub fn read_from(buf: &mut Bytes, repr: i64, version: ProtocolVersion) -> anyhow::Result<Self> {
-                match repr {
-                    #(#read_froms ,)*
-                    repr => Err(Error::InvalidEnumRepr(repr, #name_str).into()),
-                }
+        let direction_ident = mk_ident(direction);
+        result.extend(quote! {
+            pub mod #direction_ident {
+                use super::*;
+                #contents
             }
-
-            pub fn write_to(self, buf: &mut BytesMut, version: ProtocolVersion) {
-                match self {
-                    #(#write_tos ,)*
-                    #name::_Phantom(_) => panic!("phantom in {} not allowed", #name_str),
-                }
-            }
-
-            pub fn repr(&self) -> i64 {
-                match self {
-                    #(#reprs ,)*
-                    #name::_Phantom(_) => panic!("phantom in {} not allowed", #name_str),
-                }
-            }
-        }
-    };
-    res
-}
-
-fn generate_enum_variant(
-    e: &Enum,
-    variant: &EnumVariant,
-) -> (TokenStream, TokenStream, TokenStream, TokenStream) {
-    (
-        generate_enum_variant_def(e, variant),
-        generate_enum_variant_read_from(e, variant),
-        generate_enum_variant_write_to(e, variant),
-        generate_enum_variant_repr(e, variant),
-    )
-}
-
-fn generate_enum_variant_def(_e: &Enum, variant: &EnumVariant) -> TokenStream {
-    let name = ident(&variant.name);
-
-    let mut fields = vec![];
-    for field in &variant.fields {
-        let fname = ident(&field.name);
-        let ty = tokenize_field_type(&actual_field_type(field));
-
-        fields.push(quote! {
-            #fname: #ty
         });
     }
 
     quote! {
-        #name {
-            #(#fields, )*
-        }
+        use crate::{Readable, Writeable, VarInt};
+        use anyhow::Context;
+        use bytes::{Bytes, BytesMut};
+        #result
     }
 }
 
-fn generate_enum_variant_read_from(e: &Enum, variant: &EnumVariant) -> TokenStream {
-    let name = ident(&variant.name);
-    let enum_name = ident(&e.name);
-
-    let mut read_from = vec![];
-    let mut finish = vec![];
-
-    for field in &variant.fields {
-        read_from.push(read_from_statement(field));
-
-        let fname = ident(&field.name);
-        finish.push(quote! { #fname });
-    }
-
-    let repr = variant.repr;
-
-    quote! {
-        #repr => {
-            #(#read_from ;)*
-            Ok(#enum_name::#name {
-                #(#finish, )*
-            })
-        }
-    }
-}
-
-fn generate_enum_variant_write_to(e: &Enum, variant: &EnumVariant) -> TokenStream {
-    let name = ident(&variant.name);
-    let enum_name = ident(&e.name);
-
-    let mut write_to = vec![];
-    let mut fields = vec![];
-
-    for field in &variant.fields {
-        let name = ident(&field.name);
-        fields.push(quote! { #name });
-        write_to.push(write_to_statement(field, true));
-    }
-
-    quote! {
-        #enum_name::#name { #(#fields, )* } => {
-            #(#write_to ;)*
-        }
-    }
-}
-
-fn generate_enum_variant_repr(e: &Enum, variant: &EnumVariant) -> TokenStream {
-    let enum_name = ident(&e.name);
-    let name = ident(&variant.name);
-    let repr_lit = variant.repr;
-    quote! {
-       #enum_name::#name { .. } => #repr_lit
-    }
-}
-
-fn read_from_statement(field: &StructField) -> TokenStream {
-    let f = read_fn_ident(&field.ty);
-
-    let field_name = ident(&field.name);
-
-    let convert = if let Some(ref ty_from) = field.ty_from {
-        let tokens = ty_from.tokens_for_read(field_name.clone());
-        Some(quote! {
-            let #field_name = #tokens ;
-        })
-    } else {
-        None
-    };
-
-    quote! {
-        let #field_name = #f ;
-        #convert
-    }
-}
-
-fn read_fn_ident(ty: &FieldType) -> TokenStream {
-    match ty {
-        FieldType::StructOrEnum { name } => {
-            let ident = ident(name);
-            quote! {
-                #ident::<P>::read_from(buf, version)?
-            }
-        }
-        FieldType::Array(_) => panic!("struct can't have array field"),
-        FieldType::OptChat => {
-            quote! {
-                {
-                    let exists = buf.try_get_bool()?;
-                    if exists {
-                        Some(buf.try_get_string()?)
-                    } else {
-                        None
-                    }
-                }
-            }
-        }
-        FieldType::Uuid => quote! { buf.try_get_uuid()? },
-        FieldType::Nbt => quote! { buf.try_get_nbt()? },
-        FieldType::Position => quote! { buf.try_get_position()? },
-        FieldType::Node => quote! { buf.try_get_node()? },
-        FieldType::Slot => quote! { buf.try_get_slot()? },
-        FieldType::Identifier | FieldType::Chat | FieldType::String => {
-            quote! { buf.try_get_string()? }
-        }
-        x => {
-            let ident = ident(format!("try_get_{}", tokenize_field_type(x)));
-            quote! { buf.#ident()? }
-        }
-    }
-}
-
-fn write_to_statement(field: &StructField, trailing_semicolon: bool) -> TokenStream {
-    let field_name = &field.name;
-
-    let f = write_fn_ident(field_name, &field.ty);
-
-    let field_name = ident(field_name);
-
-    let convert = if let Some(ref ty_from) = field.ty_from {
-        let tokens = ty_from.tokens_for_write(quote! { #field_name });
-
-        Some(quote! {
-            let #field_name = #tokens;
-        })
-    } else {
-        None
-    };
-
-    let semicolon = if trailing_semicolon {
-        Some(quote! { ; })
-    } else {
-        None
-    };
-
-    quote! { #convert #f #semicolon }
-}
-
-fn write_fn_ident(field_name: &str, ty: &FieldType) -> TokenStream {
-    let field_name = ident(field_name);
-    match ty {
-        FieldType::StructOrEnum { name: _ } => {
-            quote! {
-                #field_name.write_to(buf, version)
-            }
-        }
-        FieldType::OptChat => {
-            quote! {
-                buf.put_bool(#field_name.is_some());
-                if let Some(ref #field_name) = #field_name {
-                    buf.put_string(#field_name);
-                }
-            }
-        }
-        FieldType::String | FieldType::Identifier | FieldType::Chat => {
-            quote! { buf.put_string(#field_name) }
-        }
-        FieldType::Uuid => quote! { buf.put_uuid(#field_name) },
-        FieldType::Nbt => quote! { buf.put_nbt(#field_name) },
-        FieldType::Position => quote! { buf.put_position(#field_name) },
-        FieldType::Node => quote! { buf.put_node(#field_name) },
-        FieldType::Slot => quote! { buf.put_slot(#field_name) },
-        FieldType::Array(_) => panic!("struct can't have array field"),
-        x => {
-            let ident = ident(format!("put_{}", tokenize_field_type(x)));
-            let x = tokenize_field_type(x);
-            quote! { buf.#ident(#field_name as #x) }
-        }
-    }
-}
-
-pub fn actual_field_type(field: &StructField) -> FieldType {
-    field
-        .ty_from
-        .as_ref()
-        .map(FieldFrom::actual_type)
-        .unwrap_or(field.ty.clone())
-}
-
-pub fn tokenize_field_type(ty: &FieldType) -> TokenStream {
-    match ty {
-        FieldType::Byte => quote! { i8 },
-        FieldType::Short => quote! { i16 },
-        FieldType::Int => quote! { i32 },
-        FieldType::Long => quote! { i64 },
-        FieldType::Ubyte => quote! { u8 },
-        FieldType::Ushort => quote! { u16 },
-        FieldType::Uint => quote! { u32 },
-        FieldType::Ulong => quote! { u64 },
-        FieldType::Block => quote! { P::Block },
-        FieldType::Item => quote! { P::Item },
-        FieldType::Identifier => quote! { String },
-        FieldType::Chat => quote! { String },
-        FieldType::OptChat => quote! { Option<String> },
-        FieldType::Boolean => quote! { bool },
-        FieldType::Position => quote! { BlockPosition },
-        FieldType::Nbt => quote! { nbt::Blob },
-        FieldType::Varint => quote! { i32 },
-        FieldType::Uuid => quote! { uuid::Uuid },
-        FieldType::Float => quote! { f32 },
-        FieldType::Angle => quote! { u8 },
-        FieldType::Double => quote! { f64 },
-        FieldType::String => quote! { String },
-        FieldType::Array(of) => {
-            let inner = tokenize_field_type(of);
-            quote! { Vec<#inner> }
-        }
-        FieldType::StructOrEnum { name } => {
-            let ident = ident(name);
-            quote! { #ident::<P> }
-        }
-        FieldType::Slot => quote! { Slot },
-        FieldType::Node => quote! { Node },
-    }
-}
-
-pub fn ident(s: impl AsRef<str>) -> Ident {
-    Ident::new(s.as_ref(), Span::call_site())
+fn mk_ident(x: impl AsRef<str>) -> Ident {
+    Ident::new(x.as_ref(), Span::call_site())
 }

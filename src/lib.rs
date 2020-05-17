@@ -1,23 +1,18 @@
-mod error;
-mod message;
-mod packet;
-mod packets;
-mod provider;
-mod types;
+mod generated;
+mod io;
 
-pub use error::Error;
-pub use message::Message;
-pub use packet::{DynPacket, Packet, PacketReader};
-pub use provider::{Provider, RawChunkPalette, RawChunkSection};
-pub use types::{BlockPosition, BytesExt, BytesMutExt, Node, Slot};
+pub use io::{Readable, Writeable};
 
-/// Protocol version.
-#[allow(non_snake_case)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ProtocolVersion {
-    V1_13_2,
-    V1_14_4,
-    V1_15_0,
-    V1_15_1,
-    V1_15_2,
+pub(crate) use io::VarInt;
+
+/// Denotes a type which may be treated as a packet.
+///
+/// If you want to store arbitrary packets (e.g. for sending
+/// over a channel), use [`Packet`](crate::Packet) instead,
+/// as it does not require boxing.
+pub trait PacketTrait: Readable + Writeable {
+    /// Returns the ID of this packet.
+    fn id() -> u32
+    where
+        Self: Sized;
 }

@@ -5,15 +5,9 @@ authors = ["caelunshun <caelunshun@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-bytes = "0.5"
-smallbox = "0.8"
-thiserror = "1.0"
 anyhow = "1.0"
-uuid = "0.8"
-hematite-nbt = "0.4"
-
-[build-dependencies]
-feather-protocol-generator = { path = "generator2" }
+thiserror = "1.0"
+bytes = "0.5"
 
 [workspace]
-members = [".", "generator", "generator2"]
+members = [".", "generator"]
