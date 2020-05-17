@@ -12,8 +12,13 @@ pub fn generate(model: &Root) -> String {
     let types = generate_types(&model.types);
 
     let modules = generate_modules(&types, model);
+    let wrapper_enum = generate_wrapper_enum(model);
 
-    modules.to_string()
+    (quote! {
+        #wrapper_enum
+        #modules
+    })
+    .to_string()
 }
 
 /// Generates a mapping from type name => type definition
@@ -343,6 +348,58 @@ fn generate_modules<'a>(types: &HashMap<&'a str, TokenStream>, model: &'a Root) 
         use bytes::{Bytes, BytesMut, Buf, BufMut};
         use std::convert::TryFrom;
         #result
+    }
+}
+
+/// Generates the `Packet` enum.
+pub fn generate_wrapper_enum(model: &Root) -> TokenStream {
+    let packet_idents = model
+        .packets
+        .iter()
+        .map(|packet| mk_ident(packet.strukt(model).name.to_camel_case()))
+        .collect::<Vec<_>>();
+
+    let e = quote! {
+        #[derive(Debug, Clone)]
+        pub enum Packet {
+            #(
+                #packet_idents(#packet_idents),
+            )*
+        }
+    };
+
+    let from = generate_wrapper_enum_from_packet(model);
+
+    quote! {
+        pub use r#enum::Packet;
+
+        mod r#enum {
+            use super::{*, clientbound::{status::*, login::*, handshake::*, play::*}, serverbound::{status::*, login::*, handshake::*, play::*}};
+
+            #e
+            #from
+        }
+    }
+}
+
+fn generate_wrapper_enum_from_packet(model: &Root) -> TokenStream {
+    let impls = model
+        .packets
+        .iter()
+        .map(|packet| packet.strukt(model))
+        .map(|strukt| mk_ident(strukt.name.to_camel_case()))
+        .map(|ident| {
+            quote! {
+                impl From<#ident> for Packet {
+                    fn from(packet: #ident) -> Self {
+                        Packet::#ident(packet)
+                    }
+                }
+            }
+        });
+
+    quote! {
+        #(#impls)*
     }
 }
 

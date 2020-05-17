@@ -1,7 +1,13 @@
+#[cfg(feature = "codec")]
+mod codec;
+#[cfg(feature = "codec")]
+pub use codec::{Error as CodecError, MinecraftCodec};
+
 #[allow(warnings)]
 mod generated;
 mod io;
 
+pub use generated::Packet;
 pub use io::{Readable, Writeable};
 
 pub(crate) use io::VarInt;
@@ -16,4 +22,22 @@ pub trait PacketTrait: Readable + Writeable {
     fn id() -> u32
     where
         Self: Sized;
+}
+
+/// Current state of the connection.
+/// This state is updated during the login
+/// sequence. See wiki.vg.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum Stage {
+    Handshake,
+    Status,
+    Login,
+    Play,
+}
+
+/// Direction in which a packet is sent.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum Direction {
+    Clientbound,
+    Serverbound,
 }

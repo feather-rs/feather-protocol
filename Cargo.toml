@@ -9,5 +9,13 @@ anyhow = "1.0"
 thiserror = "1.0"
 bytes = "0.5"
 
+tokio-util = { version = "0.3", features = ["codec"], optional = true }
+cfb8 = { version = "0.3", optional = true }
+flate2 = { version = "1.0", optional = true }
+aes = { version = "0.3", optional = true }
+
+[features]
+codec = ["tokio-util", "aes", "cfb8", "flate2"]
+
 [workspace]
 members = [".", "generator"]
