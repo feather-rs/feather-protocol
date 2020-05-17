@@ -1,3 +1,4 @@
+#[allow(warnings)]
 mod generated;
 mod io;
 

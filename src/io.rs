@@ -112,6 +112,12 @@ impl TryFrom<VarInt> for usize {
     }
 }
 
+impl From<usize> for VarInt {
+    fn from(x: usize) -> Self {
+        VarInt(x as i32)
+    }
+}
+
 impl Writeable for VarInt {
     fn write(&self, buffer: &mut BytesMut) {
         let mut x = self.0;
@@ -167,10 +173,10 @@ impl Readable for String {
     }
 }
 
-impl Writeable for bool {
+impl Writeable for String {
     fn write(&self, buffer: &mut BytesMut) {
-        let x = if *self { 1u8 } else { 0 };
-        x.write(buffer);
+        VarInt(self.len() as i32).write(buffer);
+        buffer.put(self.as_bytes());
     }
 }
 
@@ -188,5 +194,12 @@ impl Readable for bool {
         } else {
             Err(anyhow::anyhow!("invalid boolean tag {}", x))
         }
+    }
+}
+
+impl Writeable for bool {
+    fn write(&self, buffer: &mut BytesMut) {
+        let x = if *self { 1u8 } else { 0 };
+        x.write(buffer);
     }
 }

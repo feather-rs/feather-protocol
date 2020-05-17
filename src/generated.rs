@@ -4,9 +4,6 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::convert::TryFrom;
 pub mod clientbound {
     use super::*;
-    pub mod handshake {
-        use super::*;
-    }
     pub mod login {
         use super::*;
         #[derive(Debug, Clone)]
@@ -20,6 +17,11 @@ pub mod clientbound {
             {
                 let reason = String::read(buffer).context("Failed to read field `reason`")?;
                 Ok(Self { reason })
+            }
+        }
+        impl Writeable for Disconnect {
+            fn write(&self, buffer: &mut BytesMut) {
+                (&self.reason).write(buffer);
             }
         }
         #[derive(Debug, Clone)]
@@ -73,6 +75,21 @@ pub mod clientbound {
                 })
             }
         }
+        impl Writeable for EncryptionRequest {
+            fn write(&self, buffer: &mut BytesMut) {
+                (&self.server_id).write(buffer);
+                let length = VarInt::from((&self.public_key).len());
+                length.write(buffer);
+                for elem in (&self.public_key) {
+                    elem.write(buffer);
+                }
+                let length = VarInt::from((&self.verify_token).len());
+                length.write(buffer);
+                for elem in (&self.verify_token) {
+                    elem.write(buffer);
+                }
+            }
+        }
         #[derive(Debug, Clone)]
         pub struct LoginSuccess {
             pub uuid: String,
@@ -88,6 +105,12 @@ pub mod clientbound {
                 Ok(Self { uuid, username })
             }
         }
+        impl Writeable for LoginSuccess {
+            fn write(&self, buffer: &mut BytesMut) {
+                (&self.uuid).write(buffer);
+                (&self.username).write(buffer);
+            }
+        }
         #[derive(Debug, Clone)]
         pub struct SetCompression {
             pub threshold: VarInt,
@@ -99,6 +122,11 @@ pub mod clientbound {
             {
                 let threshold = VarInt::read(buffer).context("Failed to read field `threshold`")?;
                 Ok(Self { threshold })
+            }
+        }
+        impl Writeable for SetCompression {
+            fn write(&self, buffer: &mut BytesMut) {
+                (&self.threshold).write(buffer);
             }
         }
         #[derive(Debug, Clone)]
@@ -136,19 +164,28 @@ pub mod clientbound {
                 })
             }
         }
+        impl Writeable for LoginPluginRequest {
+            fn write(&self, buffer: &mut BytesMut) {
+                (&self.message_id).write(buffer);
+                (&self.channel).write(buffer);
+                for elem in (&self.data) {
+                    elem.write(buffer);
+                }
+            }
+        }
     }
-    pub mod play {
+    pub mod handshake {
         use super::*;
     }
     pub mod status {
         use super::*;
     }
+    pub mod play {
+        use super::*;
+    }
 }
 pub mod serverbound {
     use super::*;
-    pub mod handshake {
-        use super::*;
-    }
     pub mod login {
         use super::*;
         #[derive(Debug, Clone)]
@@ -163,6 +200,11 @@ pub mod serverbound {
                 let client_username =
                     String::read(buffer).context("Failed to read field `client_username`")?;
                 Ok(Self { client_username })
+            }
+        }
+        impl Writeable for LoginStart {
+            fn write(&self, buffer: &mut BytesMut) {
+                (&self.client_username).write(buffer);
             }
         }
         #[derive(Debug, Clone)]
@@ -213,6 +255,20 @@ pub mod serverbound {
                 })
             }
         }
+        impl Writeable for EncryptionResponse {
+            fn write(&self, buffer: &mut BytesMut) {
+                let length = VarInt::from((&self.shared_secret).len());
+                length.write(buffer);
+                for elem in (&self.shared_secret) {
+                    elem.write(buffer);
+                }
+                let length = VarInt::from((&self.verify_token).len());
+                length.write(buffer);
+                for elem in (&self.verify_token) {
+                    elem.write(buffer);
+                }
+            }
+        }
         #[derive(Debug, Clone)]
         pub struct LoginPluginResponse {
             pub message_id: VarInt,
@@ -249,11 +305,26 @@ pub mod serverbound {
                 Ok(Self { message_id, data })
             }
         }
+        impl Writeable for LoginPluginResponse {
+            fn write(&self, buffer: &mut BytesMut) {
+                (&self.message_id).write(buffer);
+                let tag = (&self.data).is_some();
+                tag.write(buffer);
+                if let Some(val) = (&self.data) {
+                    for elem in val {
+                        elem.write(buffer);
+                    }
+                }
+            }
+        }
     }
-    pub mod play {
+    pub mod handshake {
         use super::*;
     }
     pub mod status {
+        use super::*;
+    }
+    pub mod play {
         use super::*;
     }
 }

@@ -30,10 +30,12 @@ fn generate_type(typ: &Type) -> TokenStream {
 
     let definition = generate_type_def(typ, &ident);
     let readable = generate_readable(typ, &ident);
+    let writeable = generate_writeable(typ, &ident);
 
     quote! {
         #definition
         #readable
+        #writeable
     }
 }
 
@@ -85,6 +87,26 @@ fn generate_readable(typ: &Type, ident: &Ident) -> TokenStream {
                 Ok(Self {
                     #(#initializers,)*
                 })
+            }
+        }
+    }
+}
+
+fn generate_writeable(typ: &Type, ident: &Ident) -> TokenStream {
+    // Generate code to write each field.
+    let statements = typ
+        .fields
+        .iter()
+        .map(|field| {
+            let ident = mk_ident(field.name);
+            field.typ.tokens_for_write(&quote! { (&self.#ident) })
+        })
+        .collect::<Vec<_>>();
+
+    quote! {
+        impl Writeable for #ident {
+            fn write(&self, buffer: &mut BytesMut) {
+                #(#statements)*
             }
         }
     }
@@ -183,6 +205,67 @@ impl FieldType {
                 let typ = typ.tokens_fully_qualified();
                 quote! { #typ::read(buffer).context(#error_ctx)? }
             }
+        }
+    }
+
+    fn tokens_for_write(&self, ident: &TokenStream) -> TokenStream {
+        match self {
+            FieldType::Array(inner, length) => tokens_for_array_write(inner, length, ident),
+            FieldType::Option(inner, tag) => tokens_for_option_write(inner, tag, ident),
+            _ => {
+                quote! {
+                    #ident.write(buffer);
+                }
+            }
+        }
+    }
+}
+
+fn tokens_for_array_write(
+    inner: &FieldType,
+    length: &ArrayLength,
+    ident: &TokenStream,
+) -> TokenStream {
+    let write_length = match length {
+        ArrayLength::Prefixed(typ) => {
+            let write_length = typ.tokens_for_write(&quote! { length });
+            let typ = typ.tokens_fully_qualified();
+            quote! {
+                let length = #typ::from(#ident.len());
+                #write_length
+            }
+        }
+        ArrayLength::Inferred => quote! {}, // write nothing - length is implcit
+    };
+
+    let write_inner = inner.tokens_for_write(&quote! { elem });
+    quote! {
+        #write_length
+
+        for elem in #ident {
+            #write_inner
+        }
+    }
+}
+
+fn tokens_for_option_write(inner: &FieldType, tag: &OptionTag, ident: &TokenStream) -> TokenStream {
+    let write_tag = match tag {
+        OptionTag::Prefixed(inner) => {
+            let write_tag = inner.tokens_for_write(&quote! { tag });
+
+            quote! {
+                let tag = #ident.is_some();
+                #write_tag
+            }
+        }
+    };
+
+    let write_inner = inner.tokens_for_write(&quote! { val });
+
+    quote! {
+        #write_tag
+        if let Some(val) = #ident {
+            #write_inner
         }
     }
 }
