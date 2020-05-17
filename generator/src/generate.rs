@@ -1,6 +1,6 @@
 use crate::{
     intermediate::{Direction, Field, Root, Stage, Type},
-    model::FieldType,
+    model::{ArrayLength, FieldType, OptionTag},
 };
 use heck::CamelCase;
 use proc_macro2::{Ident, Span, TokenStream};
@@ -59,14 +59,9 @@ fn generate_readable(typ: &Type, ident: &Ident) -> TokenStream {
         .map(|field: &Field| {
             let ident = mk_ident(field.name);
 
-            let fully_qualified = field.typ.tokens_fully_qualified();
-
-            let error_ctx = format!(
-                "Failed to read field `{}` of struct `{}`",
-                field.name, typ.name
-            );
+            let read = field.typ.tokens_for_read(field.name);
             quote! {
-                let #ident = #fully_qualified::read(buffer).context(#error_ctx)?;
+                let #ident = #read;
             }
         })
         .collect::<Vec<_>>();
@@ -130,6 +125,64 @@ impl FieldType {
                 quote! { Option::<#inner> }
             }
             x => quote! { #x },
+        }
+    }
+
+    fn tokens_for_read(&self, field_name: &str) -> TokenStream {
+        match self {
+            FieldType::Array(inner, length) => {
+                let read_length = match length {
+                    ArrayLength::Prefixed(typ) => {
+                        let read_typ = typ.tokens_for_read(field_name);
+                        quote! { let length = usize::try_from(#read_typ)?; }
+                    }
+                    ArrayLength::Inferred => {
+                        quote! { let length = buffer.remaining(); }
+                    }
+                };
+                let read_inner = inner.tokens_for_read(field_name);
+
+                quote! {
+                    {
+                        #read_length
+                        if length > std::u16::MAX as usize {
+                            bail!("array length `{}` exceeds maximum allowed array length", length);
+                        }
+                        let mut buf = Vec::with_capacity(length);
+                        for _ in 0..length {
+                            buf.push(#read_inner);
+                        }
+                        buf
+                    }
+                }
+            }
+            FieldType::Option(inner, tag) => {
+                let read_tag = match tag {
+                    OptionTag::Prefixed(inner) => {
+                        let read_inner = inner.tokens_for_read(field_name);
+                        quote! {
+                            let present = #read_inner;
+                        }
+                    }
+                };
+
+                let read_inner = inner.tokens_for_read(field_name);
+                quote! {
+                    {
+                        #read_tag
+                        if present {
+                            Some(#read_inner)
+                        } else {
+                            None
+                        }
+                    }
+                }
+            }
+            typ => {
+                let error_ctx = format!("Failed to read field `{}`", field_name);
+                let typ = typ.tokens_fully_qualified();
+                quote! { #typ::read(buffer).context(#error_ctx)? }
+            }
         }
     }
 }
@@ -203,8 +256,9 @@ fn generate_modules<'a>(types: &HashMap<&'a str, TokenStream>, model: &'a Root) 
 
     quote! {
         use crate::{Readable, Writeable, VarInt};
-        use anyhow::Context;
-        use bytes::{Bytes, BytesMut};
+        use anyhow::{Context, bail};
+        use bytes::{Bytes, BytesMut, Buf, BufMut};
+        use std::convert::TryFrom;
         #result
     }
 }

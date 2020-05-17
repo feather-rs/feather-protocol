@@ -2,6 +2,10 @@
 
 use anyhow::{bail, Context};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
+use std::{
+    convert::{TryFrom, TryInto},
+    num::TryFromIntError,
+};
 use thiserror::Error;
 
 /// Trait implemented for types which can be written
@@ -101,6 +105,13 @@ impl Readable for VarInt {
     }
 }
 
+impl TryFrom<VarInt> for usize {
+    type Error = TryFromIntError;
+    fn try_from(value: VarInt) -> Result<Self, Self::Error> {
+        value.0.try_into()
+    }
+}
+
 impl Writeable for VarInt {
     fn write(&self, buffer: &mut BytesMut) {
         let mut x = self.0;
@@ -153,5 +164,29 @@ impl Readable for String {
         let s = std::str::from_utf8(&bytes).context("string contained invalid UTF8")?;
 
         Ok(s.to_owned())
+    }
+}
+
+impl Writeable for bool {
+    fn write(&self, buffer: &mut BytesMut) {
+        let x = if *self { 1u8 } else { 0 };
+        x.write(buffer);
+    }
+}
+
+impl Readable for bool {
+    fn read(buffer: &mut Bytes) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
+        let x = u8::read(buffer)?;
+
+        if x == 0 {
+            Ok(false)
+        } else if x == 1 {
+            Ok(true)
+        } else {
+            Err(anyhow::anyhow!("invalid boolean tag {}", x))
+        }
     }
 }
