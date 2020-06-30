@@ -1,41 +1,62 @@
 Root(
-    structs: {
+    protocol: (
+        name: "1.15.2",
+        id: 578,
+    ),
+    types: {
+        // --- Handshake ---
+        
+        // -- Serverbound --
+        "handshake": Struct({
+            "protocol_version": VarInt,
+            "server_address": String,
+            "server_port": U16,
+            "next_state": Custom(Enum(
+                name: "state",
+                tag: VarInt,
+                variants: {
+                    1: (name: "status"),
+                    2: (name: "login"),
+                }
+            )),
+        }),
+
         // --- Login ---
 
         // -- Clientbound --
-        "disconnect": {
+        "disconnect": Struct({
             "reason": String,
-        },
-        "encryption_request": {
+        }),
+        "encryption_request": Struct({
             "server_id": String,
             "public_key": Array(U8, Prefixed(VarInt)),
             "verify_token": Array(U8, Prefixed(VarInt)),
-        },
-        "login_success": {
+        }),
+        "login_success": Struct({
             "uuid": String,
             "username": String,
-        },
-        "set_compression": {
+        }),
+        "set_compression": Struct({
             "threshold": VarInt,
-        },
-        "login_plugin_request": {
+        }),
+        "login_plugin_request": Struct({
             "message_id": VarInt,
             "channel": String,
             "data": Array(U8, Inferred),
-        },
+        }),
         
         // -- Serverbound --
-        "login_start": {
+        "login_start": Struct({
             "client_username": String,
-        },
-        "encryption_response": {
+        }),
+        "encryption_response": Struct({
             "shared_secret": Array(U8, Prefixed(VarInt)),
             "verify_token": Array(U8, Prefixed(VarInt)),
-        },
-        "login_plugin_response": {
+        }),
+        "login_plugin_response": Struct({
             "message_id": VarInt,
             "data": Option(Array(U8, Inferred), Prefixed(Bool)),
-        },
+        }),
     },
     packets: {
         "login": {

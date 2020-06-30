@@ -7,15 +7,15 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0"
 thiserror = "1.0"
-bytes = "0.5"
 
-tokio-util = { version = "0.3", features = ["codec"], optional = true }
-cfb8 = { version = "0.3", optional = true }
+byteorder = "1.3"
+
+cfb8 = { version = "0.4", optional = true }
 flate2 = { version = "1.0", optional = true }
-aes = { version = "0.3", optional = true }
+aes = { version = "0.4", optional = true }
 
 [features]
-codec = ["tokio-util", "aes", "cfb8", "flate2"]
+codec = ["aes", "cfb8", "flate2"]
 
 [workspace]
 members = [".", "generator"]

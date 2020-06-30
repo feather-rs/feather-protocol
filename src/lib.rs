@@ -4,10 +4,10 @@ mod codec;
 pub use codec::{Error as CodecError, MinecraftCodec};
 
 #[allow(warnings)]
-mod generated;
+// mod generated;
 mod io;
 
-pub use generated::Packet;
+// pub use generated::Packet;
 pub use io::{Readable, Writeable};
 
 pub(crate) use io::VarInt;

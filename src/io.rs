@@ -1,27 +1,28 @@
 //! Traits for reading/writing Minecraft-encoded values.
 
 use anyhow::{bail, Context};
-use bytes::{Buf, BufMut, Bytes, BytesMut};
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::{
     convert::{TryFrom, TryInto},
+    io::{Cursor, Read},
     num::TryFromIntError,
 };
 use thiserror::Error;
-
-/// Trait implemented for types which can be written
-/// to a buffer.
-pub trait Writeable {
-    /// Writes this value to the given buffer.
-    fn write(&self, buffer: &mut BytesMut);
-}
 
 /// Trait implemented for types which can be read
 /// from a buffer.
 pub trait Readable {
     /// Reads this type from the given buffer.
-    fn read(buffer: &mut Bytes) -> anyhow::Result<Self>
+    fn read(buffer: &mut Cursor<&[u8]>) -> anyhow::Result<Self>
     where
         Self: Sized;
+}
+
+/// Trait implemented for types which can be written
+/// to a buffer.
+pub trait Writeable {
+    /// Writes this value to the given buffer.
+    fn write(&self, buffer: &mut Vec<u8>);
 }
 
 /// Error when reading a value.
@@ -32,20 +33,16 @@ pub enum Error {
 }
 
 macro_rules! integer_impl {
-    ($($int:ty, $read_fn:ident, $write_fn:ident),* $(,)?) => {
+    ($($int:ty, $read_fn:tt, $write_fn:tt),* $(,)?) => {
         $(
             impl Readable for $int {
-                fn read(buffer: &mut Bytes) -> anyhow::Result<Self> {
-                    if buffer.remaining() < std::mem::size_of::<Self>() {
-                        bail!(Error::UnexpectedEof(std::any::type_name::<Self>()));
-                    }
-
-                    Ok(buffer.$read_fn())
+                fn read(buffer: &mut Cursor<&[u8]>) -> anyhow::Result<Self> {
+                    buffer.$read_fn().map_err(anyhow::Error::from)
                 }
             }
 
             impl Writeable for $int {
-                fn write(&self, buffer: &mut BytesMut) {
+                fn write(&self, buffer: &mut Vec<u8>) {
                     buffer.$write_fn(*self);
                 }
             }
@@ -54,18 +51,7 @@ macro_rules! integer_impl {
 }
 
 integer_impl! {
-    u8, get_u8, put_u8,
-    u16, get_u16, put_u16,
-    u32, get_u32, put_u32,
-    u64, get_u64, put_u64,
-
-    i8, get_i8, put_i8,
-    i16, get_i16, put_i16,
-    i32, get_i32, put_i32,
-    i64, get_i64, put_i64,
-
-    f32, get_f32, put_f32,
-    f64, get_f64, put_f64,
+    u8, read_u8, write_u8,
 }
 
 /// A variable-length integer as defined by the Minecraft protocol.
@@ -73,7 +59,7 @@ integer_impl! {
 pub struct VarInt(pub i32);
 
 impl Readable for VarInt {
-    fn read(buffer: &mut Bytes) -> anyhow::Result<Self>
+    fn read(buffer: &mut Cursor<&[u8]>) -> anyhow::Result<Self>
     where
         Self: Sized,
     {
@@ -81,10 +67,6 @@ impl Readable for VarInt {
         let mut result = 0;
 
         loop {
-            if !buffer.has_remaining() {
-                bail!(Error::UnexpectedEof("VarInt"));
-            }
-
             let read = u8::read(buffer)?;
             let value = i32::from(read & 0b0111_1111);
             result |= value.overflowing_shl(7 * num_read).0;
@@ -119,7 +101,7 @@ impl From<usize> for VarInt {
 }
 
 impl Writeable for VarInt {
-    fn write(&self, buffer: &mut BytesMut) {
+    fn write(&self, buffer: &mut Vec<u8>) {
         let mut x = self.0;
         loop {
             let mut temp = (x & 0b0111_1111) as u8;
@@ -128,7 +110,7 @@ impl Writeable for VarInt {
                 temp |= 0b1000_0000;
             }
 
-            buffer.put_u8(temp);
+            buffer.write_u8(temp);
 
             if x == 0 {
                 break;
@@ -138,7 +120,7 @@ impl Writeable for VarInt {
 }
 
 impl Readable for String {
-    fn read(buffer: &mut Bytes) -> anyhow::Result<Self>
+    fn read(buffer: &mut Cursor<&[u8]>) -> anyhow::Result<Self>
     where
         Self: Sized,
     {
@@ -161,27 +143,26 @@ impl Readable for String {
             );
         }
 
-        if buffer.remaining() < length {
-            bail!(Error::UnexpectedEof("String"));
-        }
-
         // Read string into buffer.
-        let bytes = buffer.split_to(length);
-        let s = std::str::from_utf8(&bytes).context("string contained invalid UTF8")?;
+        let mut temp = Vec::with_capacity(length);
+        buffer
+            .read_exact(&mut temp)
+            .map_err(|_| Error::UnexpectedEof("String"))?;
+        let s = std::str::from_utf8(&temp).context("string contained invalid UTF8")?;
 
         Ok(s.to_owned())
     }
 }
 
 impl Writeable for String {
-    fn write(&self, buffer: &mut BytesMut) {
+    fn write(&self, buffer: &mut Vec<u8>) {
         VarInt(self.len() as i32).write(buffer);
-        buffer.put(self.as_bytes());
+        buffer.extend_from_slice(self.as_bytes());
     }
 }
 
 impl Readable for bool {
-    fn read(buffer: &mut Bytes) -> anyhow::Result<Self>
+    fn read(buffer: &mut Cursor<&[u8]>) -> anyhow::Result<Self>
     where
         Self: Sized,
     {
@@ -198,7 +179,7 @@ impl Readable for bool {
 }
 
 impl Writeable for bool {
-    fn write(&self, buffer: &mut BytesMut) {
+    fn write(&self, buffer: &mut Vec<u8>) {
         let x = if *self { 1u8 } else { 0 };
         x.write(buffer);
     }

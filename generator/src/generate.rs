@@ -86,7 +86,7 @@ fn generate_readable(typ: &Type, ident: &Ident) -> TokenStream {
 
     quote! {
         impl Readable for #ident {
-            fn read(buffer: &mut Bytes) -> anyhow::Result<Self> where Self: Sized {
+            fn read(buffer: &mut Cursor<&[u8]>) -> anyhow::Result<Self> where Self: Sized {
                 #(#read_statements)*
 
                 Ok(Self {
@@ -110,7 +110,7 @@ fn generate_writeable(typ: &Type, ident: &Ident) -> TokenStream {
 
     quote! {
         impl Writeable for #ident {
-            fn write(&self, buffer: &mut BytesMut) {
+            fn write(&self, buffer: &mut Vec<u8>) {
                 #(#statements)*
             }
         }
@@ -345,7 +345,7 @@ fn generate_modules<'a>(types: &HashMap<&'a str, TokenStream>, model: &'a Root) 
     quote! {
         use crate::{Readable, Writeable, VarInt};
         use anyhow::{Context, bail};
-        use bytes::{Bytes, BytesMut, Buf, BufMut};
+        use byteorder::{ReadBytesExt, WriteBytesExt};
         use std::convert::TryFrom;
         #result
     }
