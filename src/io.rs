@@ -1,5 +1,6 @@
 //! Traits for reading/writing Minecraft-encoded values.
 
+use crate::ProtocolVersion;
 use anyhow::{bail, Context};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::{
@@ -13,7 +14,7 @@ use thiserror::Error;
 /// from a buffer.
 pub trait Readable {
     /// Reads this type from the given buffer.
-    fn read(buffer: &mut Cursor<&[u8]>) -> anyhow::Result<Self>
+    fn read(buffer: &mut Cursor<&[u8]>, version: ProtocolVersion) -> anyhow::Result<Self>
     where
         Self: Sized;
 }
@@ -22,7 +23,7 @@ pub trait Readable {
 /// to a buffer.
 pub trait Writeable {
     /// Writes this value to the given buffer.
-    fn write(&self, buffer: &mut Vec<u8>);
+    fn write(&self, buffer: &mut Vec<u8>, version: ProtocolVersion);
 }
 
 /// Error when reading a value.
@@ -36,14 +37,14 @@ macro_rules! integer_impl {
     ($($int:ty, $read_fn:tt, $write_fn:tt),* $(,)?) => {
         $(
             impl Readable for $int {
-                fn read(buffer: &mut Cursor<&[u8]>) -> anyhow::Result<Self> {
-                    buffer.$read_fn().map_err(anyhow::Error::from)
+                fn read(buffer: &mut Cursor<&[u8]>, _version: ProtocolVersion) -> anyhow::Result<Self> {
+                    buffer.$read_fn::<BigEndian>().map_err(anyhow::Error::from)
                 }
             }
 
             impl Writeable for $int {
-                fn write(&self, buffer: &mut Vec<u8>) {
-                    buffer.$write_fn(*self);
+                fn write(&self, buffer: &mut Vec<u8>, _version: ProtocolVersion) {
+                    buffer.$write_fn::<BigEndian>(*self).unwrap();
                 }
             }
         )*
@@ -51,7 +52,31 @@ macro_rules! integer_impl {
 }
 
 integer_impl! {
-    u8, read_u8, write_u8,
+    u16, read_u16, write_u16,
+    u32, read_u32, write_u32,
+    u64, read_u64, write_u64,
+
+    i16, read_i16, write_i16,
+    i32, read_i32, write_i32,
+    i64, read_i64, write_i64,
+
+    f32, read_f32, write_f32,
+    f64, read_f64, write_f64,
+}
+
+impl Readable for u8 {
+    fn read(buffer: &mut Cursor<&[u8]>, _version: ProtocolVersion) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
+        buffer.read_u8().map_err(anyhow::Error::from)
+    }
+}
+
+impl Writeable for u8 {
+    fn write(&self, buffer: &mut Vec<u8>, _version: ProtocolVersion) {
+        buffer.write_u8(*self).unwrap();
+    }
 }
 
 /// A variable-length integer as defined by the Minecraft protocol.
@@ -59,7 +84,7 @@ integer_impl! {
 pub struct VarInt(pub i32);
 
 impl Readable for VarInt {
-    fn read(buffer: &mut Cursor<&[u8]>) -> anyhow::Result<Self>
+    fn read(buffer: &mut Cursor<&[u8]>, version: ProtocolVersion) -> anyhow::Result<Self>
     where
         Self: Sized,
     {
@@ -67,7 +92,7 @@ impl Readable for VarInt {
         let mut result = 0;
 
         loop {
-            let read = u8::read(buffer)?;
+            let read = u8::read(buffer, version)?;
             let value = i32::from(read & 0b0111_1111);
             result |= value.overflowing_shl(7 * num_read).0;
 
@@ -101,7 +126,7 @@ impl From<usize> for VarInt {
 }
 
 impl Writeable for VarInt {
-    fn write(&self, buffer: &mut Vec<u8>) {
+    fn write(&self, buffer: &mut Vec<u8>, _version: ProtocolVersion) {
         let mut x = self.0;
         loop {
             let mut temp = (x & 0b0111_1111) as u8;
@@ -110,7 +135,7 @@ impl Writeable for VarInt {
                 temp |= 0b1000_0000;
             }
 
-            buffer.write_u8(temp);
+            buffer.write_u8(temp).unwrap();
 
             if x == 0 {
                 break;
@@ -120,7 +145,7 @@ impl Writeable for VarInt {
 }
 
 impl Readable for String {
-    fn read(buffer: &mut Cursor<&[u8]>) -> anyhow::Result<Self>
+    fn read(buffer: &mut Cursor<&[u8]>, version: ProtocolVersion) -> anyhow::Result<Self>
     where
         Self: Sized,
     {
@@ -128,7 +153,7 @@ impl Readable for String {
         // Following `length` bytes are the UTF8-encoded
         // string.
 
-        let length = VarInt::read(buffer)
+        let length = VarInt::read(buffer, version)
             .context("failed to read string length")?
             .0 as usize;
 
@@ -155,18 +180,18 @@ impl Readable for String {
 }
 
 impl Writeable for String {
-    fn write(&self, buffer: &mut Vec<u8>) {
-        VarInt(self.len() as i32).write(buffer);
+    fn write(&self, buffer: &mut Vec<u8>, version: ProtocolVersion) {
+        VarInt(self.len() as i32).write(buffer, version);
         buffer.extend_from_slice(self.as_bytes());
     }
 }
 
 impl Readable for bool {
-    fn read(buffer: &mut Cursor<&[u8]>) -> anyhow::Result<Self>
+    fn read(buffer: &mut Cursor<&[u8]>, version: ProtocolVersion) -> anyhow::Result<Self>
     where
         Self: Sized,
     {
-        let x = u8::read(buffer)?;
+        let x = u8::read(buffer, version)?;
 
         if x == 0 {
             Ok(false)
@@ -179,8 +204,41 @@ impl Readable for bool {
 }
 
 impl Writeable for bool {
-    fn write(&self, buffer: &mut Vec<u8>) {
+    fn write(&self, buffer: &mut Vec<u8>, version: ProtocolVersion) {
         let x = if *self { 1u8 } else { 0 };
-        x.write(buffer);
+        x.write(buffer, version);
+    }
+}
+
+impl<T> Readable for Option<T>
+where
+    T: Readable,
+{
+    fn read(buffer: &mut Cursor<&[u8]>, version: ProtocolVersion) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
+        // Assume boolean prefix.
+        let present = bool::read(buffer, version)?;
+
+        if present {
+            Ok(Some(T::read(buffer, version)?))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+impl<T> Writeable for Option<T>
+where
+    T: Writeable,
+{
+    fn write(&self, buffer: &mut Vec<u8>, version: ProtocolVersion) {
+        let present = self.is_some();
+        present.write(buffer, version);
+
+        if let Some(value) = self {
+            value.write(buffer, version);
+        }
     }
 }

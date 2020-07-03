@@ -1,16 +1,13 @@
-#[cfg(feature = "codec")]
-mod codec;
-#[cfg(feature = "codec")]
-pub use codec::{Error as CodecError, MinecraftCodec};
-
-#[allow(warnings)]
-// mod generated;
 mod io;
 
 // pub use generated::Packet;
 pub use io::{Readable, Writeable};
 
-pub(crate) use io::VarInt;
+/// A protocol version.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum ProtocolVersion {
+    V1_16_1,
+}
 
 /// Denotes a type which may be treated as a packet.
 ///
@@ -18,8 +15,8 @@ pub(crate) use io::VarInt;
 /// over a channel), use [`Packet`](crate::Packet) instead,
 /// as it does not require boxing.
 pub trait PacketTrait: Readable + Writeable {
-    /// Returns the ID of this packet.
-    fn id() -> u32
+    /// Returns the ID of this packet for the given protocol version.
+    fn id(version: ProtocolVersion) -> u32
     where
         Self: Sized;
 }
