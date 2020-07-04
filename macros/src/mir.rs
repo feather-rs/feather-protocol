@@ -24,6 +24,13 @@ pub struct ModelId(usize);
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct StructId(usize);
 
+/// Unique ID of an enum.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct EnumId(usize);
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct VersionId(usize);
+
 /// A protocol in the MIR format.
 #[derive(Debug, Clone)]
 pub struct Protocol {
@@ -45,6 +52,11 @@ impl Protocol {
         &self.models[id.0]
     }
 
+    /// Returns the version with the given ID.
+    pub fn version(&self, id: VersionId) -> &hir::Version {
+        &self.versions[id.0]
+    }
+
     /// Returns an iterator over (model_id, model)
     pub fn models<'a>(&'a self) -> impl Iterator<Item = (ModelId, &'a Model)> + 'a {
         self.models
@@ -60,6 +72,14 @@ impl Protocol {
             .enumerate()
             .map(|(id, strukt)| (StructId(id), strukt))
     }
+
+    /// Returns an iterator over (enum_id, en)
+    pub fn enums<'a>(&'a self) -> impl Iterator<Item = (EnumId, &'a Enum)> + 'a {
+        self.enums
+            .iter()
+            .enumerate()
+            .map(|(id, en)| (EnumId(id), en))
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -73,7 +93,7 @@ pub struct Struct {
     /// Name of this struct.
     pub name: Ident,
     /// Mapping from MC version => the model of this struct for that version.
-    pub versions: BTreeMap<hir::VersionId, ModelId>,
+    pub versions: BTreeMap<VersionId, ModelId>,
     /// The union of all fields of this struct.
     pub fields: Vec<StructField>,
 }
@@ -83,7 +103,7 @@ pub struct Enum {
     /// Name of this enum.
     pub name: Ident,
     /// Mapping from MC version => variants of this enum for that version.
-    pub versions: BTreeMap<hir::VersionId, Vec<VersionedEnumVariant>>,
+    pub versions: BTreeMap<VersionId, Vec<VersionedEnumVariant>>,
     /// The union of all variants of this enum.
     pub all_variants: Vec<EnumVariant>,
 }
@@ -92,9 +112,8 @@ pub struct Enum {
 pub struct VersionedEnumVariant {
     /// Name of this variant.
     pub name: Ident,
-    /// Fields of this variant. If empty, this
-    /// is a unit variant.
-    pub fields: Vec<Field>,
+    // The model containing this variant's fields.
+    pub model: ModelId,
     /// Tag value of this variant.
     pub tag_value: Lit,
 }
@@ -168,5 +187,5 @@ pub struct Packet {
     /// Stage of the connection where this packet is valid.
     pub stage: hir::ProtocolStage,
     /// Mapping from version => ID of this packet for that version.
-    pub ids: BTreeMap<hir::VersionId, hir::PacketId>,
+    pub ids: BTreeMap<VersionId, hir::PacketId>,
 }

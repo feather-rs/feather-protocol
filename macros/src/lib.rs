@@ -25,6 +25,8 @@ pub fn packets(
 ) -> proc_macro::TokenStream {
     let input: ItemMod = syn::parse_macro_input!(input);
 
+    let _ = codegen::generate(todo!());
+
     let tokens = quote! {
         mod __packets {
             pub mod send {}
