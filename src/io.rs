@@ -320,3 +320,36 @@ where
         LengthPrefixedVec(Cow::Borrowed(slice))
     }
 }
+
+/// A vector of bytes which consumes all remaining bytes in this packet.
+/// This is used by the plugin messaging packets, for one.
+pub struct LengthInferredVecU8<'a>(pub Cow<'a, [u8]>);
+
+impl<'a> Readable for LengthInferredVecU8<'a> {
+    fn read(buffer: &mut Cursor<&[u8]>, _version: ProtocolVersion) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
+        let mut vec = Vec::new();
+        buffer.read_to_end(&mut vec)?;
+        Ok(LengthInferredVecU8(Cow::Owned(vec)))
+    }
+}
+
+impl<'a> Writeable for LengthInferredVecU8<'a> {
+    fn write(&self, buffer: &mut Vec<u8>, _version: ProtocolVersion) {
+        buffer.extend_from_slice(&*self.0);
+    }
+}
+
+impl<'a> From<&'a [u8]> for LengthInferredVecU8<'a> {
+    fn from(slice: &'a [u8]) -> Self {
+        LengthInferredVecU8(Cow::Borrowed(slice))
+    }
+}
+
+impl<'a> From<LengthInferredVecU8<'a>> for Vec<u8> {
+    fn from(x: LengthInferredVecU8<'a>) -> Self {
+        x.0.into_owned()
+    }
+}

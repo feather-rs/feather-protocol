@@ -5,6 +5,9 @@ macro_rules! user_type {
     (LengthPrefixedVec <$inner:ident>) => {
         Vec<$inner>
     };
+    (LengthInferredVecU8) => {
+        Vec<u8>
+    };
     ($typ:ty) => {
         $typ
     };
@@ -16,6 +19,9 @@ macro_rules! user_type_convert_to_writeable {
     };
     (LengthPrefixedVec <$inner:ident>, $e:expr) => {
         LengthPrefixedVec::from($e.as_slice())
+    };
+    (LengthInferredVecU8, $e:expr) => {
+        LengthInferredVecU8::from($e.as_slice())
     };
     ($typ:ty, $e:expr) => {
         $e
@@ -29,8 +35,8 @@ macro_rules! packets {
                 $(
                     $field:ident $typ:ident $(<$generics:ident>)?
                 );* $(;)?
-            }
-        ),* $(,)?
+            } $(,)?
+        )*
     ) => {
         $(
             #[derive(Debug, Clone)]
@@ -40,6 +46,7 @@ macro_rules! packets {
                 )*
             }
 
+            #[allow(unused_imports, unused_variables)]
             impl crate::Readable for $packet {
                 fn read(buffer: &mut ::std::io::Cursor<&[u8]>, version: crate::ProtocolVersion) -> anyhow::Result<Self>
                 where
@@ -60,6 +67,7 @@ macro_rules! packets {
                 }
             }
 
+            #[allow(unused_variables)]
             impl crate::Writeable for $packet {
                 fn write(&self, buffer: &mut Vec<u8>, version: crate::ProtocolVersion) {
                     $(
@@ -163,7 +171,7 @@ macro_rules! def_enum {
     };
 }
 
-use crate::io::{LengthPrefixedVec, VarInt};
+use crate::io::{LengthInferredVecU8, LengthPrefixedVec, VarInt};
 
-pub mod handshake;
-pub mod login;
+pub mod client;
+pub mod server;
