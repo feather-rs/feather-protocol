@@ -1,6 +1,6 @@
 //! Uses the MIR as input to generate the output code.
 
-use crate::mir;
+use crate::{hir::Version, mir};
 use mir::{
     Conversion, Enum, EnumId, FieldType, Model, ModelId, Source, Struct, StructField, StructId,
 };
@@ -12,6 +12,12 @@ use syn::Ident;
 pub fn generate(mir: mir::Protocol) -> TokenStream {
     let model_readers = model_readers(mir.models());
     let model_writers = model_writers(mir.models());
+
+    let struct_readers = struct_readers(mir.structs(), &model_readers, &mir);
+    let struct_writers = struct_writers(mir.structs(), &model_writers, &mir);
+
+    let enum_readers = enum_readers(mir.enums(), &model_readers, &mir);
+    let enum_writers = enum_writers(mir.enums(), &model_writers, &mir);
 
     let struct_send_definitions = struct_send_definitions(mir.structs());
     let struct_recv_definitions = struct_recv_definitions(mir.structs());
@@ -347,48 +353,12 @@ fn struct_reader(
     mir: &mir::Protocol,
 ) -> TokenStream {
     // Match over the protocol version to read the fields.
-    let match_arms: Vec<TokenStream> = strukt
+    let models = strukt
         .versions
         .iter()
-        .map(|(&version_id, &model_id)| {
-            let version = mir.version(version_id);
-            let version_ident = &version.ident;
-
-            let model = mir.model(model_id);
-
-            let read_fields = &model_readers[&model_id];
-
-            // To initialize the struct, we have to cover each field, even
-            // if the field doesn't exist in this version. Fields not
-            // present in this version are set to `None`.
-            let field_initializers = strukt.fields.iter().map(|field| {
-                // See if a field with the same ident exists in this version.
-                let exists_in_this_version =
-                    model.fields.iter().any(|field2| field2.name == field.name);
-                let name = &field.name;
-
-                if exists_in_this_version {
-                    if field.always_present {
-                        quote! { #name }
-                    } else {
-                        quote! { #name: Some(#name) }
-                    }
-                } else {
-                    assert!(!field.always_present);
-                    quote! { #name: None }
-                }
-            });
-
-            quote! {
-                crate::ProtocolVersion::#version_ident => {
-                    #read_fields
-                    Ok(Self {
-                        #(#field_initializers,)*
-                    })
-                }
-            }
-        })
+        .map(|(&version_id, &model_id)| (mir.version(version_id), model_id))
         .collect();
+    let match_arms = field_reader(quote! { Self }, &strukt.fields, models, model_readers, mir);
 
     let name = &strukt.name;
 
@@ -398,7 +368,7 @@ fn struct_reader(
                 where Self: Sized
             {
                 match version {
-                    #(#match_arms,)*
+                    #match_arms
                     version => anyhow::bail!("packet '{}' does not exist in version {:?}", stringify!(#name), version),
                 }
             }
@@ -459,5 +429,74 @@ fn struct_writer(
                 }
             }
         }
+    }
+}
+
+fn enum_readers<'a>(
+    enums: impl Iterator<Item = (EnumId, &'a Enum)>,
+    model_readers: &BTreeMap<ModelId, TokenStream>,
+    mir: &mir::Protocol,
+) -> BTreeMap<StructId, TokenStream> {
+    enums
+        .map(|(enum_id, en)| (enum_id, enum_reader(en)))
+        .collect()
+}
+
+fn enum_reader(en: &Enum) -> TokenStream {
+    
+}
+
+/// Generates a set of match arms over the `version` which will
+/// read in fields of the given struct/enum variant.
+fn field_reader(
+    type_name: TokenStream,
+    struct_fields: &[StructField],
+    models: Vec<(&Version, ModelId)>,
+    model_readers: &BTreeMap<ModelId, TokenStream>,
+    mir: &mir::Protocol,
+) -> TokenStream {
+    let arms: Vec<TokenStream> = models
+        .iter()
+        .map(|(&version, model_id)| {
+            let version_ident = &version.ident;
+
+            let model = mir.model(*model_id);
+
+            let read_fields = &model_readers[&model_id];
+
+            // To initialize the struct, we have to cover each field, even
+            // if the field doesn't exist in this version. Fields not
+            // present in this version are set to `None`.
+            let field_initializers = struct_fields.iter().map(|field| {
+                // See if a field with the same ident exists in this version.
+                let exists_in_this_version =
+                    model.fields.iter().any(|field2| field2.name == field.name);
+                let name = &field.name;
+
+                if exists_in_this_version {
+                    if field.always_present {
+                        quote! { #name }
+                    } else {
+                        quote! { #name: Some(#name) }
+                    }
+                } else {
+                    assert!(!field.always_present);
+                    quote! { #name: None }
+                }
+            });
+
+            quote! {
+                crate::ProtocolVersion::#version_ident => {
+                    #read_fields
+                    Ok(#type_name {
+                        #(#field_initializers,)*
+                    })
+                }
+            }
+        })
+        .collect();
+
+    quote! {
+        #(#arms,)*
     }
 }
