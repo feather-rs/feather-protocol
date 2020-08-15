@@ -4,8 +4,10 @@ use crate::ProtocolVersion;
 use anyhow::{bail, Context};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::{
+    borrow::Cow,
     convert::{TryFrom, TryInto},
     io::{Cursor, Read},
+    iter,
     num::TryFromIntError,
 };
 use thiserror::Error;
@@ -252,5 +254,65 @@ where
         if let Some(value) = self {
             value.write(buffer, version);
         }
+    }
+}
+
+pub const MAX_LENGTH: usize = 1024 * 1024; // 2^20 elements
+
+/// Reads and writes an array of inner `Writeable`s.
+/// The array is prefixed with a `VarInt` length.
+///
+/// This will reject arrays of lengths larger than MAX_LENGTH.
+pub struct LengthPrefixedVec<'a, T>(pub Cow<'a, [T]>)
+where
+    [T]: ToOwned<Owned = Vec<T>>;
+
+impl<'a, T> Readable for LengthPrefixedVec<'a, T>
+where
+    T: Readable,
+    [T]: ToOwned<Owned = Vec<T>>,
+{
+    fn read(buffer: &mut Cursor<&[u8]>, version: ProtocolVersion) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
+        let length: usize = VarInt::read(buffer, version)?.0.try_into()?;
+
+        let vec = iter::repeat_with(|| T::read(buffer, version))
+            .take(length)
+            .collect::<anyhow::Result<Vec<T>>>()?;
+        Ok(LengthPrefixedVec(Cow::Owned(vec)))
+    }
+}
+
+impl<'a, T> Writeable for LengthPrefixedVec<'a, T>
+where
+    T: Writeable,
+    [T]: ToOwned<Owned = Vec<T>>,
+{
+    fn write(&self, buffer: &mut Vec<u8>, version: ProtocolVersion) {
+        VarInt::from(self.0.len()).write(buffer, version);
+
+        for element in &*self.0 {
+            element.write(buffer, version);
+        }
+    }
+}
+
+impl<'a, T> From<LengthPrefixedVec<'a, T>> for Vec<T>
+where
+    [T]: ToOwned<Owned = Vec<T>>,
+{
+    fn from(x: LengthPrefixedVec<'a, T>) -> Self {
+        x.0.into_owned()
+    }
+}
+
+impl<'a, T> From<Vec<T>> for LengthPrefixedVec<'a, T>
+where
+    [T]: ToOwned<Owned = Vec<T>>,
+{
+    fn from(vec: Vec<T>) -> Self {
+        LengthPrefixedVec(Cow::Owned(vec))
     }
 }
