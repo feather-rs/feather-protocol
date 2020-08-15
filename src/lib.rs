@@ -1,6 +1,6 @@
 mod io;
+pub mod packets;
 
-// pub use generated::Packet;
 pub use io::{Readable, Writeable};
 
 /// A protocol version.

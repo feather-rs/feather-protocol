@@ -21,7 +21,7 @@ pub trait Readable {
 
 /// Trait implemented for types which can be written
 /// to a buffer.
-pub trait Writeable {
+pub trait Writeable: Sized {
     /// Writes this value to the given buffer.
     fn write(&self, buffer: &mut Vec<u8>, version: ProtocolVersion);
 }
@@ -122,6 +122,18 @@ impl TryFrom<VarInt> for usize {
 impl From<usize> for VarInt {
     fn from(x: usize) -> Self {
         VarInt(x as i32)
+    }
+}
+
+impl From<VarInt> for i32 {
+    fn from(x: VarInt) -> Self {
+        x.0
+    }
+}
+
+impl From<i32> for VarInt {
+    fn from(x: i32) -> Self {
+        VarInt(x)
     }
 }
 
