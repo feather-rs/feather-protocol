@@ -2,8 +2,23 @@ macro_rules! user_type {
     (VarInt) => {
         i32
     };
+    (LengthPrefixedVec <$inner:ident>) => {
+        Vec<$inner>
+    };
     ($typ:ty) => {
         $typ
+    };
+}
+
+macro_rules! user_type_convert_to_writeable {
+    (VarInt, $e:expr) => {
+        VarInt($e as i32)
+    };
+    (LengthPrefixedVec <$inner:ident>, $e:expr) => {
+        LengthPrefixedVec::from($e.as_slice())
+    };
+    ($typ:ty, $e:expr) => {
+        $e
     };
 }
 
@@ -12,7 +27,7 @@ macro_rules! packets {
         $(
             $packet:ident {
                 $(
-                    $field:ident $typ:ident
+                    $field:ident $typ:ident $(<$generics:ident>)?
                 );* $(;)?
             }
         ),* $(,)?
@@ -21,7 +36,7 @@ macro_rules! packets {
             #[derive(Debug, Clone)]
             pub struct $packet {
                 $(
-                    pub $field: user_type!($typ),
+                    pub $field: user_type!($typ $(<$generics>)?),
                 )*
             }
 
@@ -32,7 +47,7 @@ macro_rules! packets {
                 {
                     use anyhow::Context as _;
                     $(
-                        let $field = <$typ>::read(buffer, version)
+                        let $field = <$typ $(<$generics>)?>::read(buffer, version)
                             .context(concat!("failed to read field `", stringify!($field), "` of packet `", stringify!($packet), "`"))?
                             .into();
                     )*
@@ -48,7 +63,7 @@ macro_rules! packets {
             impl crate::Writeable for $packet {
                 fn write(&self, buffer: &mut Vec<u8>, version: crate::ProtocolVersion) {
                     $(
-                        self.$field.write(buffer, version);
+                        user_type_convert_to_writeable!($typ $(<$generics>)?, self.$field).write(buffer, version);
                     )*
                 }
             }
@@ -64,7 +79,7 @@ macro_rules! def_enum {
                 $(
                     {
                         $(
-                            $field:ident: $typ:ident
+                            $field:ident: $typ:ident $(<$generics:ident>)?
                         ),* $(,)?
                     }
                 )?
@@ -78,7 +93,7 @@ macro_rules! def_enum {
                 $(
                     {
                         $(
-                            $field: user_type!($typ),
+                            $field: user_type!($typ $(<$generics>)?),
                         )*
                     }
                 )?,
@@ -99,7 +114,7 @@ macro_rules! def_enum {
                         $discriminant => {
                             $(
                                 $(
-                                    let $field = <$typ>::read(buffer, version)
+                                    let $field = <$typ $(<$generics>)?>::read(buffer, version)
                                         .context(concat!("failed to read field `", stringify!($field),
                                             "` of enum `", stringify!($ident), "::", stringify!($variant), "`"))?;
                                 )*
@@ -148,6 +163,7 @@ macro_rules! def_enum {
     };
 }
 
-use crate::io::VarInt;
+use crate::io::{LengthPrefixedVec, VarInt};
 
 pub mod handshake;
+pub mod login;

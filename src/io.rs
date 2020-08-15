@@ -278,6 +278,10 @@ where
     {
         let length: usize = VarInt::read(buffer, version)?.0.try_into()?;
 
+        if length > MAX_LENGTH {
+            bail!("array length too large ({} > {})", length, MAX_LENGTH);
+        }
+
         let vec = iter::repeat_with(|| T::read(buffer, version))
             .take(length)
             .collect::<anyhow::Result<Vec<T>>>()?;
@@ -308,11 +312,11 @@ where
     }
 }
 
-impl<'a, T> From<Vec<T>> for LengthPrefixedVec<'a, T>
+impl<'a, T> From<&'a [T]> for LengthPrefixedVec<'a, T>
 where
     [T]: ToOwned<Owned = Vec<T>>,
 {
-    fn from(vec: Vec<T>) -> Self {
-        LengthPrefixedVec(Cow::Owned(vec))
+    fn from(slice: &'a [T]) -> Self {
+        LengthPrefixedVec(Cow::Borrowed(slice))
     }
 }
